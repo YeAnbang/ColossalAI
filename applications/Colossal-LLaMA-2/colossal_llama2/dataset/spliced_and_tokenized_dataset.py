@@ -184,6 +184,119 @@ def supervised_tokenize_sft(
     )
 
 
+def tokenize_rlhf(
+    data_point: Dict[str, str],
+    tokenizer: LlamaTokenizer,
+    conversation_template: Conversation = default_conversation,
+    ignore_index: int = None,
+    max_length: int = 4096,
+) -> Dict[str, Union[int, str, List[int]]]:
+    """
+    A tokenization function to tokenize an original pretraining data point as following:
+        {"context": [{"from": "human", "content": "xxx"}, {"from": "assistant", "content": "xxx"}],
+        "chosen": {"from": "assistant", "content": "xxx"}, "rejected": {"from": "assistant", "content": "xxx"}}
+    """
+    assert tokenizer.add_bos_token is False and tokenizer.add_eos_token is False, (
+        "Initially set `tokenizer.add_bos_token` and `tokenizer.add_eos_token` to False, "
+        "add <bos> and <eos> manually later"
+    )
+
+    assert (
+        tokenizer.bos_token == conversation_template.seps[0] and tokenizer.eos_token == conversation_template.seps[1]
+    ), "`bos_token` and `eos_token` should be the same with `conversation_template.seps`."
+
+    if ignore_index is None:
+        ignore_index = IGNORE_INDEX
+
+    context = data_point["context"]
+    template = deepcopy(conversation_template)
+    template.messages = []
+
+    for mess in context:
+        from_str = mess["from"]
+        if from_str.lower() == "human":
+            from_str = template.roles[0]
+        elif from_str.lower() == "assistant":
+            from_str = template.roles[1]
+        else:
+            raise ValueError(f"Unsupported role {from_str.lower()}")
+
+        template.append_message(from_str, mess["content"])
+
+    assert context[-1]["from"].lower() == "human", "The last message in context should be from human."
+    assert data_point["chosen"]["from"].lower() == "assistant", "The chosen message should be from assistant."
+    assert data_point["rejected"]["from"].lower() == "assistant", "The rejected message should be from assistant."
+    chosen = deepcopy(template)
+    rejected = deepcopy(template)
+
+    from_str = data_point["chosen"]["from"]
+    if from_str.lower() == "human":
+        from_str = template.roles[0]
+    elif from_str.lower() == "assistant":
+        from_str = template.roles[1]
+    else:
+        raise ValueError(f"Unsupported role {from_str.lower()}")
+    chosen.append_message(from_str, data_point["chosen"]["content"])
+
+    from_str = data_point["rejected"]["from"]
+    if from_str.lower() == "human":
+        from_str = template.roles[0]
+    elif from_str.lower() == "assistant":
+        from_str = template.roles[1]
+    else:
+        raise ValueError(f"Unsupported role {from_str.lower()}")
+    rejected.append_message(from_str, data_point["rejected"]["content"])
+
+    # `target_turn_index` is the number of turns which exceeds `max_length - 1` for the first time.
+    assert int((len(context) + 1) / 2) * 2 == len(context) + 1, "The number of turns in context should be odd."
+    target_turn_index = int((len(context) + 1) / 2)
+    (
+        chosen_input_ids,
+        chosen_attention_mask,
+        chosen_context_len,
+        rejected_input_ids,
+        rejected_attention_mask,
+        rejected_context_len,
+    ) = (None, None, None, None, None, None)
+    if (
+        len(tokenizer([chosen.get_prompt(target_turn_index * 2)], add_special_tokens=False)["input_ids"][0])
+        <= max_length - 1
+        and len(tokenizer([rejected.get_prompt(target_turn_index * 2)], add_special_tokens=False)["input_ids"][0])
+        <= max_length - 1
+    ):
+        prompt = chosen.get_prompt(2 * target_turn)
+        tokenized = tokenizer([prompt], add_special_tokens=False)
+        chosen_context_len = len(
+            tokenizer([chosen.get_prompt(2 * target_turn - 1)], add_special_tokens=False)["input_ids"][0]
+        )
+        chosen_input_ids = tokenized["input_ids"][0]
+        chosen_attention_mask = tokenized["attention_mask"][0]
+        prompt = rejected.get_prompt(2 * target_turn)
+        tokenized = tokenizer([prompt], add_special_tokens=False)
+        rejected_context_len = len(
+            tokenizer([rejected.get_prompt(2 * target_turn - 1)], add_special_tokens=False)["input_ids"][0]
+        )
+        rejected_input_ids = tokenized["input_ids"][0]
+        rejected_attention_mask = tokenized["attention_mask"][0]
+        return dict(
+            chosen_input_ids=chosen_input_ids,
+            chosen_attention_mask=chosen_attention_mask,
+            chosen_context_len=chosen_context_len,
+            rejected_input_ids=rejected_input_ids,
+            rejected_attention_mask=rejected_attention_mask,
+            rejected_context_len=rejected_context_len,
+        )
+    else:
+        return dict(
+            chosen_input_ids=None,
+            chosen_attention_mask=None,
+            chosen_context_len=None,
+            rejected_input_ids=None,
+            rejected_attention_mask=None,
+            rejected_context_len=None,
+        )
+
+
 class ClosedToConstantLengthSplicedDataset(IterableDataset):
     """
     Define an iterable dataset that returns a (close to) constant length data point spliced from multiple
