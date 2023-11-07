@@ -17,7 +17,7 @@ from datasets import dataset_dict, load_dataset
 from transformers.models.llama.tokenization_llama import LlamaTokenizer
 
 from colossalai.logging import get_dist_logger
-
+from colossal_llama2.dataset.spliced_and_tokenized_dataset import ClosedToConstantLengthSplicedPreferenceDataset
 logger = get_dist_logger()
 
 
@@ -114,8 +114,24 @@ def main():
 
         dataset = dataset.filter(lambda data: data["chosen_input_ids"] is not None)
 
+        for idx in [i for i in range(len(dataset))]:
+            if len(dataset[idx]['chosen'])>1 or len(dataset[idx]['rejected'])>1:
+                input_ids_masked = [(dataset[idx]['chosen_input_ids'][i] if dataset[idx]['chosen_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['chosen_input_ids']))]
+                print(dataset[idx])
+
+                print(dataset[idx]['context']+dataset[idx]['chosen'])
+                print("masked chosen_input_ids", tokenizer.decode(input_ids_masked))
+
+                print(dataset[idx]['context']+dataset[idx]['rejected'])
+                input_ids_masked = [(dataset[idx]['rejected_input_ids'][i] if dataset[idx]['rejected_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['rejected_input_ids']))]
+                print("masked rejected_input_ids", tokenizer.decode(input_ids_masked))
+                print('#############################################')
+
+        
         # We don't concatenate data samples here.
-        spliced_dataset = dataset
+        spliced_dataset = ClosedToConstantLengthSplicedPreferenceDataset(
+            dataset=dataset, tokenizer=tokenizer, max_length=args.max_length, error_strict=False
+        )
         # Save each jsonl spliced dataset.
         output_index = "0" * (5 - len(str(index))) + str(index)
         output_name = f"part-{output_index}"
