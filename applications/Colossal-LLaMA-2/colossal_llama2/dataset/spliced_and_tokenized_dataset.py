@@ -624,7 +624,6 @@ class ClosedToConstantLengthSplicedPreferenceDataset(IterableDataset):
                         self.rejected_attention_mask_field: spliced_rejected_attention_mask,
                         self.rejected_loss_mask_field: spliced_rejected_loss_mask
                     })
-            print(examples[:3])
             if self.shuffle:
                 random.shuffle(examples)
             for spliced_data_point in examples:

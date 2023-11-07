@@ -9,13 +9,15 @@ import json
 import math
 import os
 import time
+import torch
 from multiprocessing import cpu_count
 
 from colossal_llama2.dataset.spliced_and_tokenized_dataset import tokenize_rlhf
+from colossal_llama2.dataset.dpo_dataset_utils import get_reference_model_reward
 from colossal_llama2.utils.conversation import default_conversation
 from datasets import dataset_dict, load_dataset
 from transformers.models.llama.tokenization_llama import LlamaTokenizer
-
+from transformers import AutoModelForCausalLM
 from colossalai.logging import get_dist_logger
 from colossal_llama2.dataset.spliced_and_tokenized_dataset import ClosedToConstantLengthSplicedPreferenceDataset
 logger = get_dist_logger()
@@ -31,7 +33,7 @@ def main():
         help="Comma(i.e., ',') separated list of all data directories containing `.jsonl` data files.",
     )
     parser.add_argument(
-        "--tokenizer_dir", type=str, required=True, default=None, help="A directory containing the tokenizer"
+        "--pretrained", type=str, required=True, default=None, help="A directory containing the tokenizer"
     )
     parser.add_argument("--data_cache_dir", type=str, default="cache", help="Data cache directory")
     parser.add_argument(
@@ -47,6 +49,7 @@ def main():
         help="Output directory of spliced dataset with arrow format",
     )
     parser.add_argument("--max_length", type=int, default=4096, help="Max length of each spliced tokenized sequence")
+    parser.add_argument("--training_type", type=str, default="dpo", help="dpo or dpo_cache_reward or ppo")
     parser.add_argument("--num_spliced_dataset_bins", type=int, default=10, help="Number of spliced dataset bins")
     args = parser.parse_args()
 
@@ -84,11 +87,17 @@ def main():
         train_splits.append(f"train[{start}%:{end}%]")
 
     # Prepare to the tokenizer.
-    tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer_dir)
+
+    tokenizer = LlamaTokenizer.from_pretrained(args.pretrained)
     tokenizer.add_bos_token = False
     tokenizer.add_eos_token = False
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.unk_token
+    ref_model = None
+    if args.training_type == 'dpo_cache_reward':
+        ref_model = AutoModelForCausalLM.from_pretrained(args.pretrained, torch_dtype=torch.float16)
+        ref_model = ref_model.to(torch.cuda.current_device())
+        ref_model.eval()
 
     list_dataset = load_dataset(
         path="json",
@@ -96,7 +105,7 @@ def main():
         cache_dir=os.path.join(args.data_cache_dir, "raw"),
         keep_in_memory=False,
         split=train_splits,
-        num_proc=cpu_count(),
+        num_proc=cpu_count()
     )
     for index, dataset in enumerate(list_dataset):
         assert isinstance(dataset, dataset_dict.Dataset)
@@ -114,18 +123,28 @@ def main():
 
         dataset = dataset.filter(lambda data: data["chosen_input_ids"] is not None)
 
-        for idx in [i for i in range(len(dataset))]:
-            if len(dataset[idx]['chosen'])>1 or len(dataset[idx]['rejected'])>1:
-                input_ids_masked = [(dataset[idx]['chosen_input_ids'][i] if dataset[idx]['chosen_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['chosen_input_ids']))]
-                print(dataset[idx])
+        if args.training_type == 'dpo_cache_reward':
+            dataset = dataset.map(
+                function=get_reference_model_reward,
+                fn_kwargs={
+                    "model": ref_model
+                },
+                keep_in_memory=False,
+                num_proc=10,
+            )
 
-                print(dataset[idx]['context']+dataset[idx]['chosen'])
-                print("masked chosen_input_ids", tokenizer.decode(input_ids_masked))
+        # for idx in [i for i in range(len(dataset))]:
+        #     if len(dataset[idx]['chosen'])>1 or len(dataset[idx]['rejected'])>1:
+        #         input_ids_masked = [(dataset[idx]['chosen_input_ids'][i] if dataset[idx]['chosen_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['chosen_input_ids']))]
+        #         print(dataset[idx])
 
-                print(dataset[idx]['context']+dataset[idx]['rejected'])
-                input_ids_masked = [(dataset[idx]['rejected_input_ids'][i] if dataset[idx]['rejected_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['rejected_input_ids']))]
-                print("masked rejected_input_ids", tokenizer.decode(input_ids_masked))
-                print('#############################################')
+        #         print(dataset[idx]['context']+dataset[idx]['chosen'])
+        #         print("masked chosen_input_ids", tokenizer.decode(input_ids_masked))
+
+        #         print(dataset[idx]['context']+dataset[idx]['rejected'])
+        #         input_ids_masked = [(dataset[idx]['rejected_input_ids'][i] if dataset[idx]['rejected_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['rejected_input_ids']))]
+        #         print("masked rejected_input_ids", tokenizer.decode(input_ids_masked))
+        #         print('#############################################')
 
         
         # We don't concatenate data samples here.
