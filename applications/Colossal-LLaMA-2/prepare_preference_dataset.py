@@ -9,17 +9,17 @@ import json
 import math
 import os
 import time
-import torch
 from multiprocessing import cpu_count
 
+import torch
 from colossal_llama2.dataset.spliced_and_tokenized_dataset import tokenize_rlhf
-from colossal_llama2.dataset.dpo_dataset_utils import get_reference_model_reward
 from colossal_llama2.utils.conversation import default_conversation
 from datasets import dataset_dict, load_dataset
-from transformers.models.llama.tokenization_llama import LlamaTokenizer
 from transformers import AutoModelForCausalLM
+from transformers.models.llama.tokenization_llama import LlamaTokenizer
+
 from colossalai.logging import get_dist_logger
-from colossal_llama2.dataset.spliced_and_tokenized_dataset import ClosedToConstantLengthSplicedPreferenceDataset
+
 logger = get_dist_logger()
 
 
@@ -94,7 +94,7 @@ def main():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.unk_token
     ref_model = None
-    if args.training_type == 'dpo_cache_reward':
+    if args.training_type == "dpo_cache_reward":
         ref_model = AutoModelForCausalLM.from_pretrained(args.pretrained, torch_dtype=torch.float16)
         ref_model = ref_model.to(torch.cuda.current_device())
         ref_model.eval()
@@ -105,7 +105,7 @@ def main():
         cache_dir=os.path.join(args.data_cache_dir, "raw"),
         keep_in_memory=False,
         split=train_splits,
-        num_proc=cpu_count()
+        num_proc=cpu_count(),
     )
     for index, dataset in enumerate(list_dataset):
         assert isinstance(dataset, dataset_dict.Dataset)
@@ -123,67 +123,50 @@ def main():
 
         dataset = dataset.filter(lambda data: data["chosen_input_ids"] is not None)
 
-        if args.training_type == 'dpo_cache_reward':
-            dataset = dataset.map(
-                function=get_reference_model_reward,
-                fn_kwargs={
-                    "model": ref_model
-                },
-                keep_in_memory=False,
-                num_proc=10,
-            )
+        if args.training_type == "dpo_cache_reward":
+            # dataset = dataset.map(
+            #     function=get_reference_model_reward,
+            #     fn_kwargs={
+            #         "model": ref_model
+            #     },
+            #     keep_in_memory=False,
+            #     num_proc=10,
+            # )
 
-        # for idx in [i for i in range(len(dataset))]:
-        #     if len(dataset[idx]['chosen'])>1 or len(dataset[idx]['rejected'])>1:
-        #         input_ids_masked = [(dataset[idx]['chosen_input_ids'][i] if dataset[idx]['chosen_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['chosen_input_ids']))]
-        #         print(dataset[idx])
+            # TODO: add cache reward
+            raise NotImplementedError
 
-        #         print(dataset[idx]['context']+dataset[idx]['chosen'])
-        #         print("masked chosen_input_ids", tokenizer.decode(input_ids_masked))
-
-        #         print(dataset[idx]['context']+dataset[idx]['rejected'])
-        #         input_ids_masked = [(dataset[idx]['rejected_input_ids'][i] if dataset[idx]['rejected_loss_mask'][i]==1 else 1303) for i in range(len(dataset[idx]['rejected_input_ids']))]
-        #         print("masked rejected_input_ids", tokenizer.decode(input_ids_masked))
-        #         print('#############################################')
-
-        
-        # We don't concatenate data samples here.
-        spliced_dataset = ClosedToConstantLengthSplicedPreferenceDataset(
-            dataset=dataset, tokenizer=tokenizer, max_length=args.max_length, error_strict=False
-        )
         # Save each jsonl spliced dataset.
         output_index = "0" * (5 - len(str(index))) + str(index)
         output_name = f"part-{output_index}"
         output_jsonl_path = os.path.join(args.data_jsonl_output_dir, output_name + ".jsonl")
         st = time.time()
         with open(file=output_jsonl_path, mode="w", encoding="utf-8") as fp_writer:
-            spliced_count = 0
-            for spliced_data_point in spliced_dataset:
-                if spliced_count % 500 == 0:
-                    logger.info(f"processing {spliced_count} spliced data points for {fp_writer.name}")
-                spliced_count += 1
-                fp_writer.write(json.dumps(spliced_data_point, ensure_ascii=False) + "\n")
+            count = 0
+            for data_point in dataset:
+                if count % 500 == 0:
+                    logger.info(f"processing {count} spliced data points for {fp_writer.name}")
+                count += 1
+                fp_writer.write(json.dumps(data_point, ensure_ascii=False) + "\n")
 
         logger.info(
             f"Current file {fp_writer.name}; "
-            f"Data size: {len(spliced_dataset)}; "
-            f"Spliced data size: {spliced_dataset.current_size}; "
-            f"Splicing compression rate: {round(spliced_dataset.current_size / len(spliced_dataset), 6)}; "
+            f"Data size: {len(dataset)}; "
             f"Time cost: {round((time.time() - st) / 60, 6)} minutes."
         )
 
         # Save each arrow spliced dataset
         output_arrow_path = os.path.join(args.data_arrow_output_dir, output_name)
         logger.info(f"Start to save {output_arrow_path}")
-        spliced_dataset = load_dataset(
+        dataset = load_dataset(
             path="json",
             data_files=[output_jsonl_path],
-            cache_dir=os.path.join(args.data_cache_dir, "spliced_and_tokenized"),
+            cache_dir=os.path.join(args.data_cache_dir, "tokenized"),
             keep_in_memory=False,
             num_proc=cpu_count(),
             split="train",
         )
-        spliced_dataset.save_to_disk(dataset_path=output_arrow_path, num_proc=min(len(spliced_dataset), cpu_count()))
+        dataset.save_to_disk(dataset_path=output_arrow_path, num_proc=min(len(dataset), cpu_count()))
 
 
 if __name__ == "__main__":

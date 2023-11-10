@@ -1,7 +1,6 @@
 from typing import Any, Optional
 
 import torch
-from coati.models.base import Actor
 from coati.models.loss import DpoLoss
 from coati.models.utils import calc_masked_log_probs
 from torch.optim import Optimizer
@@ -10,14 +9,12 @@ from torch.utils.data import DataLoader
 from tqdm import trange
 from transformers import PreTrainedTokenizerBase, pipeline
 
-from colossalai.logging import DistributedLogger
+from colossalai.booster import Booster
+from colossalai.cluster import DistCoordinator
 from colossalai.utils import get_current_device
 
 from .base import SLTrainer
-from .strategies import Strategy
-from .utils import is_rank_0
-
-logger = DistributedLogger("dpo")
+from .utils import is_rank_0, to_device
 
 
 class DPOTrainer(SLTrainer):
@@ -49,26 +46,30 @@ class DPOTrainer(SLTrainer):
 
     def __init__(
         self,
-        strategy: Strategy,
-        actor: Actor,
+        actor: Any,
         ref_model: Any,
+        booster: Booster,
         actor_optim: Optimizer,
         actor_lr_scheduler: _LRScheduler,
         tokenizer: PreTrainedTokenizerBase,
         max_epochs: int = 1,
         beta: float = 0.1,
         accumulation_steps: int = 1,
-        disable_reference: bool = True,
+        start_epoch: int = 0,
+        save_interval: int = 0,
+        save_dir: str = None,
+        coordinator: DistCoordinator = None,
     ) -> None:
-        super().__init__(strategy=strategy, max_epochs=max_epochs, model=actor, optimizer=actor_optim)
-
+        super().__init__(booster, max_epochs=max_epochs, model=actor, optimizer=actor_optim, start_epoch=start_epoch)
         self.ref_model = ref_model
         self.actor_scheduler = actor_lr_scheduler
         self.tokenizer = tokenizer
         self.actor_loss_fn = DpoLoss(beta)
+        self.save_interval = save_interval
+        self.coordinator = coordinator
+        self.save_dir = save_dir
         self.num_train_step = 0
         self.accumulation_steps = accumulation_steps
-        self.disable_reference = disable_reference
         self.device = get_current_device()
 
     def _before_fit(
@@ -108,32 +109,47 @@ class DPOTrainer(SLTrainer):
         """
         self.model.train()
         step_bar = trange(
-            len(self.train_dataloader),
+            len(self.train_dataloader) // self.accumulation_steps,
             desc=f"Epoch {epoch + 1}/{self.max_epochs}",
             disable=not is_rank_0(),
         )
         for i, batch in enumerate(self.train_dataloader):
+            batch = to_device(batch, self.device)
+            # print(batch)
             (
-                chosen_input_ids_,
-                chosen_attention_mask_,
-                chosen_ref_reward_,
-                reject_input_ids_,
-                reject_attention_mask_,
-                reject_ref_reward_,
-            ) = batch
-            chosen_input_ids = chosen_input_ids_.to(torch.cuda.current_device())
-            chosen_attention_mask = chosen_attention_mask_.to(torch.cuda.current_device())
-            reject_input_ids = reject_input_ids_.to(torch.cuda.current_device())
-            reject_attention_mask = reject_attention_mask_.to(torch.cuda.current_device())
-            chosen_ref_reward = chosen_ref_reward_.to(torch.cuda.current_device())
-            reject_ref_reward = reject_ref_reward_.to(torch.cuda.current_device())
-            chosen_mask = chosen_attention_mask.clone()
-            reject_mask = reject_attention_mask.clone()
+                chosen_input_ids,
+                chosen_attention_mask,
+                chosen_loss_mask,
+                reject_input_ids,
+                reject_attention_mask,
+                reject_loss_mask,
+            ) = (
+                batch["chosen_input_ids"],
+                batch["chosen_attention_mask"],
+                batch["chosen_loss_mask"],
+                batch["reject_input_ids"],
+                batch["reject_attention_mask"],
+                batch["reject_loss_mask"],
+            )
 
-            first_diff_position = torch.argmax((chosen_input_ids != reject_input_ids).float(), dim=1)
-            for j in range(chosen_mask.size(0)):
-                chosen_mask[j, : first_diff_position[j]] = False
-                reject_mask[j, : first_diff_position[j]] = False
+            # print(chosen_input_ids[0])
+            # print(chosen_attention_mask[0])
+            # print(chosen_loss_mask[0])
+            # print(reject_input_ids[0])
+            # print(reject_attention_mask[0])
+            # print(reject_loss_mask[0])
+            # masked_chosen = []
+            # masked_reject = []
+            # for j in range(chosen_input_ids[0].size(0)):
+            #     if chosen_loss_mask[0][j]:
+            #         masked_chosen.append(chosen_input_ids[0][j])
+            #     else:
+            #         masked_chosen.append(102)
+            #     if reject_loss_mask[0][j]:
+            #         masked_reject.append(reject_input_ids[0][j])
+            #     else:
+            #         masked_reject.append(102)
+
             batch_size = chosen_input_ids.size()[0]
 
             actor_all_logits = self.model(
@@ -143,32 +159,28 @@ class DPOTrainer(SLTrainer):
             actor_chosen_logits = actor_all_logits[:batch_size]
             actor_reject_logits = actor_all_logits[batch_size:]
 
-            logprob_actor_chosen = calc_masked_log_probs(actor_chosen_logits, chosen_input_ids, chosen_mask[:, 1:])
+            logprob_actor_chosen = calc_masked_log_probs(actor_chosen_logits, chosen_input_ids, chosen_loss_mask[:, 1:])
 
-            logprob_actor_reject = calc_masked_log_probs(actor_reject_logits, reject_input_ids, reject_mask[:, 1:])
+            logprob_actor_reject = calc_masked_log_probs(actor_reject_logits, reject_input_ids, reject_loss_mask[:, 1:])
 
-            if not self.disable_reference:
-                self.ref_model.eval()
-                with torch.no_grad():
-                    ref_all_logits = self.ref_model(
-                        torch.cat([chosen_input_ids, reject_input_ids]),
-                        torch.cat([chosen_attention_mask, reject_attention_mask]),
-                    )["logits"].to(torch.float32)
-                    ref_chosen_logits = ref_all_logits[:batch_size]
-                    ref_reject_logits = ref_all_logits[batch_size:]
-                    logprob_ref_chosen = calc_masked_log_probs(ref_chosen_logits, chosen_input_ids, chosen_mask[:, 1:])
-                    logprob_ref_reject = calc_masked_log_probs(ref_reject_logits, reject_input_ids, reject_mask[:, 1:])
-            else:
-                logprob_ref_chosen = chosen_ref_reward
-                logprob_ref_reject = reject_ref_reward
+            self.ref_model.eval()
+            with torch.no_grad():
+                ref_all_logits = self.ref_model(
+                    torch.cat([chosen_input_ids, reject_input_ids]),
+                    torch.cat([chosen_attention_mask, reject_attention_mask]),
+                )["logits"].to(torch.float32)
+                ref_chosen_logits = ref_all_logits[:batch_size]
+                ref_reject_logits = ref_all_logits[batch_size:]
+                logprob_ref_chosen = calc_masked_log_probs(ref_chosen_logits, chosen_input_ids, chosen_loss_mask[:, 1:])
+                logprob_ref_reject = calc_masked_log_probs(ref_reject_logits, reject_input_ids, reject_loss_mask[:, 1:])
 
             losses, chosen_rewards, rejected_rewards = self.actor_loss_fn(
                 logprob_actor_chosen,
                 logprob_actor_reject,
                 logprob_ref_chosen if logprob_ref_chosen is not None else None,
                 logprob_ref_reject if logprob_ref_reject is not None else None,
-                chosen_mask,
-                reject_mask,
+                chosen_loss_mask,
+                reject_loss_mask,
             )
             reward_accuracies = (chosen_rewards > rejected_rewards).float()
 
@@ -230,8 +242,8 @@ class DPOTrainer(SLTrainer):
                 chosen_attention_mask = chosen_attention_mask_.to(torch.cuda.current_device())
                 reject_input_ids = reject_input_ids_.to(torch.cuda.current_device())
                 reject_attention_mask = reject_attention_mask_.to(torch.cuda.current_device())
-                chosen_ref_reward = chosen_ref_reward_.to(torch.cuda.current_device())
-                reject_ref_reward = reject_ref_reward_.to(torch.cuda.current_device())
+                chosen_ref_reward_.to(torch.cuda.current_device())
+                reject_ref_reward_.to(torch.cuda.current_device())
                 if i == 0 and is_rank_0():
                     # sequences = generate(self.model.module, chosen_input_ids[:3,:20], self.tokenizer, **{'do_sample':True, 'max_length':100})
                     try:
@@ -256,14 +268,14 @@ class DPOTrainer(SLTrainer):
                             prefix + test_text,
                             **{"do_sample": True, "max_length": 200, "temperature": 0.75, "num_return_sequences": 5},
                         )
-                        logger.info(f"testing generation...\n{sequences}")
+                        self.coordinator.print_on_master(f"testing generation...\n{sequences}")
 
-                chosen_mask = chosen_attention_mask.clone()
-                reject_mask = reject_attention_mask.clone()
+                chosen_loss_mask = chosen_attention_mask.clone()
+                reject_loss_mask = reject_attention_mask.clone()
                 first_diff_position = torch.argmax((chosen_input_ids != reject_input_ids).float(), dim=1)
-                for j in range(chosen_mask.size(0)):
-                    chosen_mask[j, : first_diff_position[j]] = False
-                    reject_mask[j, : first_diff_position[j]] = False
+                for j in range(chosen_loss_mask.size(0)):
+                    chosen_loss_mask[j, : first_diff_position[j]] = False
+                    reject_loss_mask[j, : first_diff_position[j]] = False
                 batch_size = chosen_input_ids.size()[0]
 
                 actor_all_logits = self.model(
@@ -273,37 +285,38 @@ class DPOTrainer(SLTrainer):
                 actor_chosen_logits = actor_all_logits[:batch_size]
                 actor_reject_logits = actor_all_logits[batch_size:]
 
-                logprob_actor_chosen = calc_masked_log_probs(actor_chosen_logits, chosen_input_ids, chosen_mask[:, 1:])
+                logprob_actor_chosen = calc_masked_log_probs(
+                    actor_chosen_logits, chosen_input_ids, chosen_loss_mask[:, 1:]
+                )
                 # logprob_actor_chosen =  torch.clamp(logprob_actor_chosen, min=-4)  # gradient clip
 
-                logprob_actor_reject = calc_masked_log_probs(actor_reject_logits, reject_input_ids, reject_mask[:, 1:])
+                logprob_actor_reject = calc_masked_log_probs(
+                    actor_reject_logits, reject_input_ids, reject_loss_mask[:, 1:]
+                )
                 # logprob_actor_reject =  torch.clamp(logprob_actor_reject, min=-4)  # gradient clip
-                if not self.disable_reference:
-                    self.ref_model.eval()
-                    with torch.no_grad():
-                        ref_all_logits = self.ref_model(
-                            torch.cat([chosen_input_ids, reject_input_ids]),
-                            torch.cat([chosen_attention_mask, reject_attention_mask]),
-                        )["logits"].to(torch.float32)
-                        ref_chosen_logits = ref_all_logits[:batch_size]
-                        ref_reject_logits = ref_all_logits[batch_size:]
-                        logprob_ref_chosen = calc_masked_log_probs(
-                            ref_chosen_logits, chosen_input_ids, chosen_mask[:, 1:]
-                        )
-                        logprob_ref_reject = calc_masked_log_probs(
-                            ref_reject_logits, reject_input_ids, reject_mask[:, 1:]
-                        )
-                else:
-                    logprob_ref_chosen = chosen_ref_reward
-                    logprob_ref_reject = reject_ref_reward
+
+                self.ref_model.eval()
+                with torch.no_grad():
+                    ref_all_logits = self.ref_model(
+                        torch.cat([chosen_input_ids, reject_input_ids]),
+                        torch.cat([chosen_attention_mask, reject_attention_mask]),
+                    )["logits"].to(torch.float32)
+                    ref_chosen_logits = ref_all_logits[:batch_size]
+                    ref_reject_logits = ref_all_logits[batch_size:]
+                    logprob_ref_chosen = calc_masked_log_probs(
+                        ref_chosen_logits, chosen_input_ids, chosen_loss_mask[:, 1:]
+                    )
+                    logprob_ref_reject = calc_masked_log_probs(
+                        ref_reject_logits, reject_input_ids, reject_loss_mask[:, 1:]
+                    )
 
                 losses, chosen_rewards, rejected_rewards = self.actor_loss_fn(
                     logprob_actor_chosen,
                     logprob_actor_reject,
                     logprob_ref_chosen if logprob_ref_chosen is not None else None,
                     logprob_ref_reject if logprob_ref_reject is not None else None,
-                    chosen_mask,
-                    reject_mask,
+                    chosen_loss_mask,
+                    reject_loss_mask,
                 )
                 reward_accuracies = (chosen_rewards > rejected_rewards).float()
 

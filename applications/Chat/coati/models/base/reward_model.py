@@ -41,6 +41,7 @@ class RewardModel(LoRAModule):
         sequence_lengths = torch.max(attention_mask * torch.arange(sequences.size(1), device=sequences.device), dim=1)[
             0
         ]
+
         sequence_hidden_states = last_hidden_states[torch.arange(last_hidden_states.size(0)), sequence_lengths]
         values = self.value_head(sequence_hidden_states).squeeze(1)  # ensure shape is (B, )
         return values

@@ -15,14 +15,18 @@ set_n_least_used_CUDA_VISIBLE_DEVICES() {
 
 set_n_least_used_CUDA_VISIBLE_DEVICES 4
 
-torchrun --standalone --nproc_per_node=4 train_sft.py \
-    --pretrain "/path/to/LLaMa-7B/" \
-    --model 'llama' \
-    --strategy colossalai_zero2 \
-    --save_path /path/to/Coati-7B \
-    --dataset /path/to/data.json \
+# the real batch size for gradient descent is number_of_node_in_hostfile * nproc_per_node * train_batch_size
+colossalai run --nproc_per_node 1 --master_port 28569 --hostfile ./hostfile train_sft.py \
+    --pretrain "gpt2" \
+    --plugin zero2 \
+    --save_path /home/lcyab/data/test_folder/model_checkpoint/gpt2 \
+    --dataset tatsu-lab/alpaca \
     --batch_size 4 \
+    --max_epochs 1 \
+    --max_datasets_size 20000 \
     --accumulation_steps 8 \
     --lr 2e-5 \
-    --max_datasets_size 512 \
-    --max_epochs 1
+    --max_len 512 \
+    --max_epochs 1 \
+    --grad_checkpoint \
+    --use_wandb

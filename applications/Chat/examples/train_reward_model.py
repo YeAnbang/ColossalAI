@@ -3,7 +3,7 @@ import warnings
 
 import torch
 import torch.distributed as dist
-from coati.dataset import HhRlhfDataset, RmStaticDataset
+from coati.dataset import PreferenceDataset
 from coati.models import LogExpLoss, LogSigLoss
 from coati.models.bloom import BLOOMRM
 from coati.models.gpt import GPTRM
@@ -40,13 +40,25 @@ def train(args):
 
     with strategy.model_init_context():
         if args.model == "bloom":
-            model = BLOOMRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            if args.pretrain:
+                model = BLOOMRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            else:
+                model = BLOOMRM(pretrained="bigscience/bloom-560m", lora_rank=args.lora_rank)
         elif args.model == "opt":
-            model = OPTRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            if args.pretrain:
+                model = OPTRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            else:
+                model = OPTRM(pretrained="facebook/opt-350m", lora_rank=args.lora_rank)
         elif args.model == "gpt2":
-            model = GPTRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            if args.pretrain:
+                model = GPTRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            else:
+                model = GPTRM(pretrained="gpt2", lora_rank=args.lora_rank)
         elif args.model == "llama":
-            model = LlamaRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            if args.pretrain:
+                model = LlamaRM(pretrained=args.pretrain, lora_rank=args.lora_rank)
+            else:
+                raise (ValueError("Please provide pretrain path"))
         else:
             raise ValueError(f'Unsupported model "{args.model}"')
 
@@ -101,11 +113,21 @@ def train(args):
     eval_data = data["test"].select(range(min(args.max_datasets_size, len(data["test"]))))
 
     if args.dataset == "Dahoas/rm-static":
-        train_dataset = RmStaticDataset(train_data, tokenizer, args.max_len)
-        eval_dataset = RmStaticDataset(eval_data, tokenizer, args.max_len)
+        train_dataset = PreferenceDataset(
+            train_data,
+            tokenizer,
+            args.max_len,
+            dataset_schema={"prompt": "prompt", "chosen": "chosen", "rejected": "rejected"},
+        )
+        eval_dataset = PreferenceDataset(
+            eval_data,
+            tokenizer,
+            args.max_len,
+            dataset_schema={"prompt": "prompt", "chosen": "chosen", "rejected": "rejected"},
+        )
     elif args.dataset == "Anthropic/hh-rlhf":
-        train_dataset = HhRlhfDataset(train_data, tokenizer, args.max_len)
-        eval_dataset = HhRlhfDataset(eval_data, tokenizer, args.max_len)
+        train_dataset = PreferenceDataset(train_data, tokenizer, args.max_len)
+        eval_dataset = PreferenceDataset(eval_data, tokenizer, args.max_len)
     else:
         raise ValueError(f'Unsupported dataset "{args.dataset}"')
 
@@ -142,7 +164,7 @@ def train(args):
         eval_dataset, shuffle=(eval_sampler is None), sampler=eval_sampler, batch_size=args.batch_size, pin_memory=True
     )
 
-    lr_scheduler = CosineAnnealingLR(optim, train_dataloader.__len__() // 100)
+    lr_scheduler = CosineAnnealingLR(optim, train_dataloader.__len__() * args.max_epochs // 100)
     strategy_dict = strategy.prepare(dict(model=model, optimizer=optim, lr_scheduler=lr_scheduler))
     model = strategy_dict["model"]
     optim = strategy_dict["optimizer"]
@@ -170,8 +192,10 @@ def train(args):
         LORA_MANAGER.merge_weights = True
         model.eval()
     # save model checkpoint after fitting on only rank0
-    state_dict = model.state_dict()
-    torch.save(state_dict, args.save_path)
+    strategy.save_model(model, args.save_path)
+
+    # state_dict = model.state_dict()
+    # torch.save(state_dict, args.save_path)
     # save optimizer checkpoint on all ranks
     if args.need_optim_ckpt:
         strategy.save_optimizer(
@@ -193,11 +217,11 @@ if __name__ == "__main__":
         "--dataset", type=str, choices=["Anthropic/hh-rlhf", "Dahoas/rm-static"], default="Dahoas/rm-static"
     )
     parser.add_argument("--subset", type=lambda x: None if x == "None" else x, default=None)
-    parser.add_argument("--max_datasets_size", type=int, default=1000000)
+    parser.add_argument("--max_datasets_size", type=int, default=160800)  # 160800
     parser.add_argument("--save_path", type=str, default="rm_ckpt")
-    parser.add_argument("--max_epochs", type=int, default=1)
-    parser.add_argument("--batch_size", type=int, default=1)
-    parser.add_argument("--max_len", type=int, default=512)
+    parser.add_argument("--max_epochs", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--max_len", type=int, default=700)
     parser.add_argument("--lora_rank", type=int, default=0, help="low-rank adaptation matrices rank")
     parser.add_argument("--merge_lora_weights", type=bool, default=True)
     parser.add_argument("--lr", type=float, default=9e-6)

@@ -15,11 +15,14 @@ set_n_least_used_CUDA_VISIBLE_DEVICES() {
 
 set_n_least_used_CUDA_VISIBLE_DEVICES 2
 
-torchrun --standalone --nproc_per_node=2 train_reward_model.py \
+# the real batch size for gradient descent is number_of_node_in_hostfile * nproc_per_node * batch_size
+colossalai run --nproc_per_node 1 --hostfile ./hostfile train_reward_model.py \
     --pretrain 'gpt2' \
     --model 'gpt2' \
     --strategy colossalai_zero2 \
-    --loss_fn 'log_exp' \
+    --loss_fn 'log_sig' \
     --dataset 'Anthropic/hh-rlhf' \
+    --save_path '/path/to/reward_model_checkpoint' \
+    --use_wandb \
     --batch_size 16 \
     --max_epochs 10

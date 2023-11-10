@@ -1,6 +1,7 @@
 from .base import Actor, Critic, RewardModel
 from .lora import LoRAModule, convert_to_lora_module
-from .loss import LogExpLoss, LogSigLoss, PolicyLoss, ValueLoss
+from .loss import DpoLoss, LogExpLoss, LogSigLoss, PolicyLoss, ValueLoss
+from .utils import load_checkpoint, save_checkpoint
 
 __all__ = [
     "Actor",
@@ -12,4 +13,9 @@ __all__ = [
     "LogExpLoss",
     "LoRAModule",
     "convert_to_lora_module",
+    "save_checkpoint",
+    "load_checkpoint",
+    "DpoLoss",
+    "LogSigLoss",
+    "LogExpLoss",
 ]

@@ -9,11 +9,10 @@ import random
 import warnings
 from copy import deepcopy
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
-import torch
-from torch.utils.data import ConcatDataset, Dataset, IterableDataset
 
 from colossal_llama2.utils.conversation import Conversation, default_conversation
 from datasets import dataset_dict
+from torch.utils.data import ConcatDataset, Dataset, IterableDataset
 from transformers.models.llama.tokenization_llama import LlamaTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 
@@ -184,8 +183,9 @@ def supervised_tokenize_sft(
         seq_category=data_point["category"] if "category" in data_point else "None",
     )
 
+
 def generate_loss_mask(template: Conversation, tokenizer: Any, context_len: int):
-    target_turn = int(len(template.messages)/2)
+    target_turn = int(len(template.messages) / 2)
     prompt = template.get_prompt(2 * target_turn)
     tokenized = tokenizer([prompt], add_special_tokens=False)
     input_ids = tokenized["input_ids"][0]
@@ -209,11 +209,7 @@ def generate_loss_mask(template: Conversation, tokenizer: Any, context_len: int)
         print(
             "Please check whether the tokenizer add additional `bos_token` and `eos_token`.\n\nOr the original message contains `bos_token` or `eos_token`."
         )
-        return dict(
-            input_ids=None,
-            attention_mask=None,
-            loss_mask=None
-        )
+        return dict(input_ids=None, attention_mask=None, loss_mask=None)
 
     input_ids = [tokenizer.bos_token_id] + input_ids
     attention_mask = [1] + attention_mask
@@ -221,14 +217,10 @@ def generate_loss_mask(template: Conversation, tokenizer: Any, context_len: int)
     starts = starts[context_len:]
     ends = ends[context_len:]
     for start, end in zip(starts, ends):
-        for i in range(start+1, end+2):
+        for i in range(start + 1, end + 2):
             loss_mask[i] = 1 if attention_mask[i] else 0
-    
-    return {
-        'input_ids':input_ids,
-        'attention_mask':attention_mask,
-        'loss_mask':loss_mask
-    }
+
+    return {"input_ids": input_ids, "attention_mask": attention_mask, "loss_mask": loss_mask}
 
 
 def tokenize_rlhf(
@@ -267,24 +259,24 @@ def tokenize_rlhf(
             from_str = template.roles[1]
         else:
             raise ValueError(f"Unsupported role {from_str.lower()}")
-        
-        if len(template.messages)>0 and from_str == template.messages[-1][0]:
-            template.messages[-1][1] = str(template.messages[-1][1]+mess["content"])
+
+        if len(template.messages) > 0 and from_str == template.messages[-1][0]:
+            template.messages[-1][1] = str(template.messages[-1][1] + mess["content"])
         else:
             template.append_message(from_str, mess["content"])
 
-    if len(template.messages)%2!=1:
+    if len(template.messages) % 2 != 1:
         print("Please make sure leading context is started and ended with a line from human")
         print(template.messages)
         return dict(
-                chosen_input_ids=None,
-                chosen_attention_mask=None,
-                chosen_loss_mask=None,
-                rejected_input_ids=None,
-                rejected_attention_mask=None,
-                rejected_loss_mask=None,
-            )
-    round_of_context = int((len(template.messages)-1)/2)
+            chosen_input_ids=None,
+            chosen_attention_mask=None,
+            chosen_loss_mask=None,
+            rejected_input_ids=None,
+            rejected_attention_mask=None,
+            rejected_loss_mask=None,
+        )
+    round_of_context = int((len(template.messages) - 1) / 2)
 
     assert context[-1]["from"].lower() == "human", "The last message in context should be from human."
     chosen = deepcopy(template)
@@ -325,22 +317,26 @@ def tokenize_rlhf(
         <= max_length - 1
     ):
         chosen_data_packed = generate_loss_mask(chosen, tokenizer, round_of_context)
-        (
-            chosen_input_ids, chosen_attention_mask, chosen_loss_mask
-        ) = chosen_data_packed['input_ids'],chosen_data_packed['attention_mask'],chosen_data_packed['loss_mask']
+        (chosen_input_ids, chosen_attention_mask, chosen_loss_mask) = (
+            chosen_data_packed["input_ids"],
+            chosen_data_packed["attention_mask"],
+            chosen_data_packed["loss_mask"],
+        )
 
         rejected_data_packed = generate_loss_mask(rejected, tokenizer, round_of_context)
-        (
-            rejected_input_ids, rejected_attention_mask, rejected_loss_mask
-        ) = rejected_data_packed['input_ids'],rejected_data_packed['attention_mask'],rejected_data_packed['loss_mask']
-        
+        (rejected_input_ids, rejected_attention_mask, rejected_loss_mask) = (
+            rejected_data_packed["input_ids"],
+            rejected_data_packed["attention_mask"],
+            rejected_data_packed["loss_mask"],
+        )
+
         return {
-            'chosen_input_ids':chosen_input_ids,
-            'chosen_attention_mask':chosen_attention_mask,
-            'chosen_loss_mask':chosen_loss_mask,
-            'rejected_input_ids':rejected_input_ids,
-            'rejected_attention_mask':rejected_attention_mask,
-            'rejected_loss_mask':rejected_loss_mask,
+            "chosen_input_ids": chosen_input_ids,
+            "chosen_attention_mask": chosen_attention_mask,
+            "chosen_loss_mask": chosen_loss_mask,
+            "rejected_input_ids": rejected_input_ids,
+            "rejected_attention_mask": rejected_attention_mask,
+            "rejected_loss_mask": rejected_loss_mask,
         }
     else:
         return dict(
@@ -467,167 +463,3 @@ class ClosedToConstantLengthSplicedDataset(IterableDataset):
                 # TODO(2023-09-18): check errors for each spliced tokenized data point.
                 self.current_size += 1
                 yield spliced_data_point
-
-class ClosedToConstantLengthSplicedPreferenceDataset(IterableDataset):
-    """
-    Define an iterable dataset that returns a (close to) constant length data point spliced from multiple
-    original independent (pre-tokenized) data points.
-    """
-
-    def __init__(
-        self,
-        dataset: DSType,
-        tokenizer: PreTrainedTokenizer,
-        max_length: int = 4096,
-        num_packed_sequences: int = 8,
-        fetch_sequence_func: Callable[[Any], Tuple[List[int], List[int]]] = None,
-        chosen_input_ids_field: str = "chosen_input_ids",
-        rejected_input_ids_field: str = "rejected_input_ids",
-        chosen_attention_mask_field: str = "chosen_attention_mask",
-        rejected_attention_mask_field: str = "rejected_attention_mask",
-        chosen_loss_mask_field: str = "chosen_loss_mask",
-        rejected_loss_mask_field: str = "rejected_loss_mask",
-        infinite: bool = False,
-        shuffle: bool = True,
-        error_strict: bool = False,
-    ) -> None:
-        self.tokenizer = tokenizer
-        self.dataset = dataset
-        self.max_length = max_length
-        self.infinite = infinite
-        self.max_buffer_size = max_length * num_packed_sequences  # e.g., 4096 * 16
-        self.shuffle = shuffle
-
-        # Callable[[Dict[str, Any]], Tuple[List[int], List[int]]],
-        # A function that fetch sequence input_ids and labels from the original data point
-        
-        self.chosen_input_ids_field = chosen_input_ids_field
-        self.chosen_attention_mask_field = chosen_attention_mask_field
-        self.chosen_loss_mask_field = chosen_loss_mask_field
-        self.rejected_input_ids_field = rejected_input_ids_field
-        self.rejected_attention_mask_field = rejected_attention_mask_field
-        self.rejected_loss_mask_field = rejected_loss_mask_field
-
-        if fetch_sequence_func is None:
-            self.fetch_sequence_func = lambda data_point: (data_point[self.chosen_input_ids_field], 
-                                                           data_point[self.chosen_attention_mask_field],
-                                                           data_point[self.chosen_loss_mask_field],
-                                                           data_point[self.rejected_input_ids_field],
-                                                           data_point[self.rejected_attention_mask_field],
-                                                           data_point[self.rejected_loss_mask_field]
-                                                           )
-        else:
-            self.fetch_sequence_func = fetch_sequence_func
-
-        self.error_strict = error_strict
-        self.current_size = 0  # `int`, current packed data size.
-
-    def __len__(self) -> int:
-        return len(self.dataset)
-
-    def __iter__(self) -> Iterable[Dict[str, List[int]]]:
-        iterator = iter(self.dataset)
-        more_data_points = True
-        while more_data_points is True:
-            buffer, buffer_len = [], 0
-            while True:
-                # ending condition.
-                if buffer_len >= self.max_buffer_size:
-                    break
-                try:
-                    # `Tuple[List[int], List[int]]`
-                    ( 
-                        chosen_input_ids, chosen_attention_mask, chosen_loss_mask, 
-                        rejected_input_ids, rejected_attention_mask, rejected_loss_mask 
-                        ) = self.fetch_sequence_func(next(iterator))
-
-                    buffer.append({self.chosen_input_ids_field: chosen_input_ids, self.chosen_attention_mask_field: chosen_attention_mask,
-                        self.chosen_loss_mask_field: chosen_loss_mask, self.rejected_input_ids_field: rejected_input_ids,
-                        self.rejected_attention_mask_field: rejected_attention_mask, self.rejected_loss_mask_field: rejected_loss_mask})
-                    buffer_len += len(buffer[-1][self.chosen_input_ids_field]) + len(buffer[-1][self.rejected_input_ids_field])
-                except StopIteration:
-                    if self.infinite is True:
-                        iterator = iter(self.dataset)
-                        warnings.warn("The dataset reached end and the iterator is reset to the start.")
-                    else:
-                        more_data_points = False
-                        break
-            examples = []  # `List[Dict[str, List[int]]]`, save buffered spliced data points.
-            spliced_input_ids = []
-            (
-                spliced_chosen_input_ids, spliced_chosen_attention_mask, spliced_chosen_loss_mask,
-                spliced_rejected_input_ids, spliced_rejected_attention_mask, spliced_rejected_loss_mask
-            ) = [], [], [], [], [], []
-
-            for i, data_point in enumerate(buffer):
-                # TODO(2023-09-18) check errors for each unspliced tokenized data point
-                spliced_data_point = {}
-                is_truncated = False
-                for key in [self.chosen_input_ids_field, self.chosen_attention_mask_field, self.chosen_loss_mask_field,
-                    self.rejected_input_ids_field, self.rejected_attention_mask_field, self.rejected_loss_mask_field]:
-                    sequence = data_point[key]
-                    if len(sequence) > self.max_length:
-                        truncated_sequence = sequence[: self.max_length]
-                        if set(truncated_sequence) == {IGNORE_INDEX} and key in [self.chosen_input_ids_field, self.rejected_input_ids_field]:
-                            if self.error_strict is True:
-                                raise ValueError(
-                                    f"Find an out-of-bounds length({len(truncated_sequence)}) data point "
-                                    f"with all label values as {IGNORE_INDEX}."
-                                )
-                            else:
-                                warnings.warn(f"Filter an error truncated data point (labels all {IGNORE_INDEX})")
-                                continue  # Skip the current error data point.
-                        is_truncated = True
-                        spliced_data_point[key] = truncated_sequence
-                if is_truncated is True:
-                    examples.append(spliced_data_point)
-                    warnings.warn("Find a data point to be truncated.")
-                    continue
-
-                # Pre action judgment.
-                if len(spliced_input_ids) + len(data_point[self.chosen_input_ids_field]) + len(data_point[self.rejected_input_ids_field])> self.max_length:
-                    examples.append({
-                        self.chosen_input_ids_field: spliced_chosen_input_ids,
-                        self.chosen_attention_mask_field: spliced_chosen_attention_mask,
-                        self.chosen_loss_mask_field: spliced_chosen_loss_mask,
-                        self.rejected_input_ids_field: spliced_rejected_input_ids,
-                        self.rejected_attention_mask_field: spliced_rejected_attention_mask,
-                        self.rejected_loss_mask_field: spliced_rejected_loss_mask
-                    })
-                    spliced_input_ids = []
-                    (
-                        spliced_chosen_input_ids, spliced_chosen_attention_mask, spliced_chosen_loss_mask,
-                        spliced_rejected_input_ids, spliced_rejected_attention_mask, spliced_rejected_loss_mask
-                    ) = (
-                        [data_point[self.chosen_input_ids_field]], [data_point[self.chosen_attention_mask_field]], [data_point[self.chosen_loss_mask_field]], 
-                        [data_point[self.rejected_input_ids_field]], [data_point[self.rejected_attention_mask_field]], [data_point[self.rejected_loss_mask_field]]
-                        )
-                    spliced_input_ids.extend(data_point[self.chosen_input_ids_field])
-                    spliced_input_ids.extend(data_point[self.rejected_input_ids_field])
-                else:
-                    spliced_input_ids.extend(data_point[self.chosen_input_ids_field])
-                    spliced_input_ids.extend(data_point[self.rejected_input_ids_field])
-                    spliced_chosen_input_ids.append(data_point[self.chosen_input_ids_field])
-                    spliced_chosen_attention_mask.append(data_point[self.chosen_attention_mask_field])
-                    spliced_chosen_loss_mask.append(data_point[self.chosen_loss_mask_field])
-                    spliced_rejected_input_ids.append(data_point[self.rejected_input_ids_field])
-                    spliced_rejected_attention_mask.append(data_point[self.rejected_attention_mask_field])
-                    spliced_rejected_loss_mask.append(data_point[self.rejected_loss_mask_field])
-                        
-            # For residual spliced data point at the end of the data set
-            if self.infinite is False and more_data_points is False and len(spliced_input_ids) > 0:
-                examples.append({
-                        self.chosen_input_ids_field: spliced_chosen_input_ids,
-                        self.chosen_attention_mask_field: spliced_chosen_attention_mask,
-                        self.chosen_loss_mask_field: spliced_chosen_loss_mask,
-                        self.rejected_input_ids_field: spliced_rejected_input_ids,
-                        self.rejected_attention_mask_field: spliced_rejected_attention_mask,
-                        self.rejected_loss_mask_field: spliced_rejected_loss_mask
-                    })
-            if self.shuffle:
-                random.shuffle(examples)
-            for spliced_data_point in examples:
-                # TODO(2023-09-18): check errors for each spliced tokenized data point.
-                self.current_size += 1
-                yield spliced_data_point
-

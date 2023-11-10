@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import os
 import random
 from dataclasses import dataclass
-from typing import Dict, List, Union, Sequence, Optional, Iterator, Callable
+from typing import Callable, Dict, Iterator, List, Optional, Sequence, Union
 
+import numpy as np
 import torch
-from datasets import dataset_dict, load_from_disk
+import torch.nn.functional as F
+from colossal_llama2.dataset.utils import chuncate_sequence, pad_to_max_len
 from datasets import Dataset as HFDataset
+from datasets import dataset_dict, load_from_disk
 from torch.distributed import ProcessGroup
 from torch.distributed.distributed_c10d import _get_default_group
-from torch.utils.data import ConcatDataset, Dataset, DataLoader, DistributedSampler
+from torch.utils.data import ConcatDataset, DataLoader, Dataset, DistributedSampler
 from transformers.tokenization_utils import PreTrainedTokenizer
-import torch.nn.functional as F
 
 DatasetType = Union[Dataset, ConcatDataset, dataset_dict.Dataset]
 PathType = Union[str, os.PathLike]
 
 
 def load_tokenized_dataset(
-    dataset_paths: Union[PathType, List[PathType]], mode: str = "train"
+    dataset_paths: Union[PathType, List[PathType]], mode: str = "train", **kwargs
 ) -> Optional[DatasetType]:
     """
     Load pre-tokenized dataset.
     Each instance of dataset is a dictionary with
     `{'input_ids': List[int], 'labels': List[int], sequence: str}` format.
     """
-    mode_map = {"train": "train", "dev": "validation", "test": "test"}
+    mode_map = kwargs.get("mode_map", {"train": "train", "dev": "validation", "test": "test"})
     assert mode in tuple(mode_map), f"Unsupported mode {mode}, it must be in {tuple(mode_map)}"
 
     if isinstance(dataset_paths, (str, os.PathLike)):
@@ -134,6 +135,78 @@ class DataCollatorForSupervisedDataset(object):
         attention_mask = input_ids.ne(self.tokenizer.pad_token_id)  # `torch.BoolTensor`, (bsz, max_len)
 
         return dict(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+
+
+@dataclass
+class DataCollatorForPreferenceDataset(object):
+    """
+    Collate instances for supervised dataset.
+    Each instance is a tokenized dictionary with fields
+    `input_ids`(List[int]), `labels`(List[int]) and `sequence`(str).
+    """
+
+    tokenizer: PreTrainedTokenizer
+    max_length: int = 4096
+
+    def __call__(self, instances: Sequence[Dict[str, List[int]]]) -> Dict[str, torch.Tensor]:
+        """
+
+        Args:
+            instances (`Sequence[Dict[str, List[int]]]`):
+                Mini-batch samples, each sample is stored in an individual dictionary.
+
+        Returns:
+            (`Dict[str, torch.Tensor]`): Contains the following `torch.Tensor`:
+                `input_ids`: `torch.Tensor` of shape (bsz, max_len);
+                `attention_mask`: `torch.BoolTensor` of shape (bsz, max_len);
+                `labels`: `torch.Tensor` of shape (bsz, max_len), which contains `IGNORE_INDEX`.
+        """
+        assert isinstance(self.tokenizer.pad_token_id, int) and self.tokenizer.pad_token_id >= 0, (
+            f"`{self.tokenizer.__class__.__name__}.pad_token_id` must be a valid non-negative integer index value, "
+            f"but now `{self.tokenizer.pad_token_id}`"
+        )
+
+        (
+            chosen_input_ids,
+            chosen_attention_mask,
+            chosen_loss_mask,  # [batch_size * seq_len]
+            reject_input_ids,
+            reject_attention_mask,
+            reject_loss_mask,
+        ) = (
+            chuncate_sequence([ins["chosen_input_ids"] for ins in instances], self.max_length, torch.int64),
+            chuncate_sequence([ins["chosen_attention_mask"] for ins in instances], self.max_length, torch.bool),
+            chuncate_sequence([ins["chosen_loss_mask"] for ins in instances], self.max_length, torch.bool),
+            chuncate_sequence([ins["rejected_input_ids"] for ins in instances], self.max_length, torch.int64),
+            chuncate_sequence([ins["rejected_attention_mask"] for ins in instances], self.max_length, torch.bool),
+            chuncate_sequence([ins["rejected_loss_mask"] for ins in instances], self.max_length, torch.bool),
+        )
+
+        padding_side = self.tokenizer.padding_side
+
+        (
+            chosen_input_ids,
+            chosen_attention_mask,
+            chosen_loss_mask,
+            reject_input_ids,
+            reject_attention_mask,
+            reject_loss_mask,
+        ) = (
+            pad_to_max_len(chosen_input_ids, self.max_length, self.tokenizer.pad_token_id, padding_side=padding_side),
+            pad_to_max_len(chosen_attention_mask, self.max_length, False, padding_side=padding_side),
+            pad_to_max_len(chosen_loss_mask, self.max_length, False, padding_side=padding_side),
+            pad_to_max_len(reject_input_ids, self.max_length, self.tokenizer.pad_token_id, padding_side=padding_side),
+            pad_to_max_len(reject_attention_mask, self.max_length, False, padding_side=padding_side),
+            pad_to_max_len(reject_loss_mask, self.max_length, False, padding_side=padding_side),
+        )
+        return dict(
+            chosen_input_ids=chosen_input_ids,
+            chosen_attention_mask=chosen_attention_mask,
+            chosen_loss_mask=chosen_loss_mask,
+            reject_input_ids=reject_input_ids,
+            reject_attention_mask=reject_attention_mask,
+            reject_loss_mask=reject_loss_mask,
+        )
 
 
 class StatefulDistributedSampler(DistributedSampler):

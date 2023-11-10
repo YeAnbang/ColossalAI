@@ -13,13 +13,18 @@ set_n_least_used_CUDA_VISIBLE_DEVICES() {
     echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 }
 
-set_n_least_used_CUDA_VISIBLE_DEVICES 2
+set_n_least_used_CUDA_VISIBLE_DEVICES 1
 
-# torchrun --standalone --nproc_per_node=2 train_prompts.py prompts.csv --strategy colossalai_zero2
-
-torchrun --standalone --nproc_per_node=2 train_prompts.py \
-    --pretrain_dataset /path/to/data.json \
-    --prompt_dataset /path/to/data.json \
+# the real batch size for gradient descent is number_of_node_in_hostfile * nproc_per_node * batch_size
+colossalai run --nproc_per_node 1 --hostfile ./hostfile train_rlhf_sft.py \
+    --pretrain "gpt2" \
+    --model 'gpt2' \
     --strategy colossalai_zero2 \
-    --num_episodes 1 --num_collect_steps 2 --num_update_steps 1 \
-    --train_batch_size 2
+    --save_path '/path/to/actor/pretrain_checkpoint' \
+    --dataset "/path/to/pretrain_data.json" \
+    --batch_size 4 \
+    --accumulation_steps 8 \
+    --lr 2e-5 \
+    --max_datasets_size 60000 \
+    --max_epochs 1 \
+    --use_wandb

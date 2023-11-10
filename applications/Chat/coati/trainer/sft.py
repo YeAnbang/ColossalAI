@@ -1,16 +1,16 @@
 from typing import Optional
 
 import torch
-import torch.distributed as dist
 import tqdm
+from coati.models import save_checkpoint
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import DataLoader
 
-from colossalai.logging import DistributedLogger
+from colossalai.booster import Booster
+from colossalai.cluster import DistCoordinator
 
 from .base import SLTrainer
-from .strategies import GeminiStrategy, Strategy
 from .utils import is_rank_0, to_device
 
 
@@ -30,22 +30,23 @@ class SFTTrainer(SLTrainer):
     def __init__(
         self,
         model,
-        strategy: Strategy,
+        booster: Booster,
         optim: Optimizer,
         lr_scheduler: _LRScheduler,
         max_epochs: int = 2,
         accumulation_steps: int = 8,
+        start_epoch=0,
+        save_interval: int = None,
+        save_dir: str = None,
+        coordinator: Optional[DistCoordinator] = None,
     ) -> None:
-        if accumulation_steps > 1:
-            assert not isinstance(
-                strategy, GeminiStrategy
-            ), "Accumulation steps are not supported in stage 3 of ColossalAI"
-
-        super().__init__(strategy, max_epochs, model, optim)
+        super().__init__(booster, max_epochs, model, optim, start_epoch=start_epoch)
 
         self.accumulation_steps = accumulation_steps
         self.scheduler = lr_scheduler
-
+        self.save_interval = save_interval
+        self.save_dir = save_dir
+        self.coordinator = coordinator
         self.num_train_step = 0
         self.num_eval_step = 0
 
@@ -58,13 +59,14 @@ class SFTTrainer(SLTrainer):
         )
         for i, batch in enumerate(self.train_dataloader):
             batch = to_device(batch, torch.cuda.current_device())
+            batch_size = batch["input_ids"].size(0)
             outputs = self.model(batch["input_ids"], attention_mask=batch["attention_mask"], labels=batch["labels"])
             loss = outputs.loss / self.accumulation_steps
             self.total_loss += loss.item()
-            self.strategy.backward(loss, self.model, self.optimizer)
+            self.booster.backward(loss=loss, optimizer=self.optimizer)
             # gradient accumulation
             if (i + 1) % self.accumulation_steps == 0:
-                self.strategy.optimizer_step(self.optimizer)
+                self.optimizer.step()
                 self.optimizer.zero_grad()
                 self.scheduler.step()
                 if self.writer:
@@ -73,6 +75,26 @@ class SFTTrainer(SLTrainer):
                     self.num_train_step += 1
                 self.total_loss = 0
                 step_bar.update()
+            if (
+                self.save_dir is not None
+                and self.save_interval is not None
+                and (self.save_interval and (i + 1) % (self.save_interval * self.accumulation_steps) == 0)
+                or (i + 1) == len(self.train_dataloader)
+            ):
+                save_checkpoint(
+                    save_dir=self.save_dir,
+                    booster=self.booster,
+                    model=self.model,
+                    optimizer=self.optimizer,
+                    lr_scheduler=self.scheduler,
+                    epoch=epoch,
+                    step=i + 1,
+                    batch_size=batch_size,
+                    coordinator=self.coordinator,
+                )
+                self.coordinator.print_on_master(
+                    f"Saved checkpoint at epoch {epoch} step {i + 1} at folder {self.save_dir}"
+                )
         step_bar.close()
 
     def _eval(self, epoch: int):
@@ -88,8 +110,7 @@ class SFTTrainer(SLTrainer):
                     loss_sum += outputs.loss.item()
                     num_seen += batch["input_ids"].size(0)
                 loss_mean = loss_sum / num_seen
-                if dist.get_rank() == 0:
-                    self.logger.info(f"Eval Epoch {epoch}/{self.max_epochs} loss {loss_mean}")
+                self.coordinator.print_on_master(f"Eval Epoch {epoch}/{self.max_epochs} loss {loss_mean}")
                 if self.writer:
                     self.writer.add_scalar("eval/loss", loss_mean, self.num_eval_step)
                     self.num_eval_step += 1
@@ -98,7 +119,6 @@ class SFTTrainer(SLTrainer):
         self,
         train_dataloader: DataLoader,
         eval_dataloader: Optional[DataLoader] = None,
-        logger: Optional[DistributedLogger] = None,
         log_dir: Optional[str] = None,
         use_wandb: bool = False,
     ):
@@ -110,7 +130,6 @@ class SFTTrainer(SLTrainer):
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
-        self.logger = logger
         self.writer = None
         if use_wandb and is_rank_0():
             assert log_dir is not None, "log_dir must be provided when use_wandb is True"
