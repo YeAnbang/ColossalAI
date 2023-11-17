@@ -50,7 +50,7 @@ SAVE_DIR="${PARENT_SAVE_DIR}${FULL_PROJECT_NAME}"
 TENSORBOARD_DIR="${PARENT_TENSORBOARD_DIR}${FULL_PROJECT_NAME}"
 CONFIG_FILE="${PARENT_CONFIG_FILE}${FULL_PROJECT_NAME}.json"
 
-colossalai run --nproc_per_node 8 --hostfile hostfile --master_port 30036 train_dpo.py \
+colossalai run --nproc_per_node 8 --hostfile hostfile --master_port 30031 train_dpo.py \
     --pretrain $PRETRAINED_MODEL_PATH \
     --checkpoint_path $PRETRAINED_MODEL_PATH \
     --tokenizer_dir $PRETRAINED_TOKENIZER_PATH \

@@ -8,6 +8,7 @@ import torch
 import torch.distributed as dist
 from coati.dataset import SFTDataset, SupervisedDataset
 from coati.models import convert_to_lora_module, load_checkpoint
+from coati.models.flash_attention_patch import replace_with_flash_attention
 from coati.trainer import SFTTrainer
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -16,7 +17,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 import colossalai
 from colossalai.booster import Booster
-from colossalai.booster.plugin import GeminiPlugin, HybridParallelPlugin, LowLevelZeroPlugin
+from colossalai.booster.plugin import GeminiPlugin, HybridParallelPlugin, LowLevelZeroPlugin, TorchDDPPlugin
 from colossalai.cluster import DistCoordinator
 from colossalai.lazy import LazyInitContext
 from colossalai.logging import get_dist_logger
@@ -35,7 +36,10 @@ def train(args):
     # ==============================
     # Initialize Booster
     # ==============================
-    if args.plugin == "gemini":
+    if args.plugin == "ddp":
+        # default torch ddp plugin without any acceleration, for debugging purpose acceleration, for debugging purpose
+        plugin = TorchDDPPlugin(find_unused_parameters=True)
+    elif args.plugin == "gemini":
         plugin = GeminiPlugin(
             precision=args.mixed_precision,
             initial_scale=2**16,
@@ -90,11 +94,15 @@ def train(args):
         if args.lora_rank > 0:
             model = convert_to_lora_module(model, args.lora_rank, lora_train_bias=args.lora_train_bias)
 
-    if args.grad_checkpoint:
+    if args.grad_checkpoint and args.lora_rank == 0:
+        # lora layers are not supported by gradient checkpointing
         model.gradient_checkpointing_enable()
         coordinator.print_on_master(msg="Gradient checkpointing enabled successfully")
 
     # TODO: support flash attention
+    if args.use_flash_attn:
+        replace_with_flash_attention(model=model)
+        coordinator.print_on_master(msg="Flash-attention enabled successfully")
 
     # configure tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.pretrain)
@@ -198,6 +206,7 @@ def train(args):
         lr_scheduler=lr_scheduler,
         dataloader=train_dataloader,
     )
+    # model = model.to(get_current_device())
     torch.set_default_dtype(torch.float)
 
     coordinator.print_on_master(f"Booster init max CUDA memory: {torch.cuda.max_memory_allocated() / 1024 ** 2:.2f} MB")
@@ -218,7 +227,7 @@ def train(args):
                 load_dir=args.checkpoint_path,
                 booster=booster,
                 model=model,
-                optimizer=optimizer,
+                optimizer=optim,
                 lr_scheduler=lr_scheduler,
             )
             train_dataloader.sampler.set_start_index(start_index=sampler_start_idx)
@@ -282,7 +291,7 @@ if __name__ == "__main__":
         "--plugin",
         type=str,
         default="gemini",
-        choices=["gemini", "gemini_auto", "zero2", "zero2_cpu", "3d"],
+        choices=["gemini", "gemini_auto", "zero2", "zero2_cpu", "3d", "ddp"],
         help="Choose which plugin to use",
     )
     parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping value")
@@ -321,5 +330,6 @@ if __name__ == "__main__":
     parser.add_argument("--log_dir", default="logs", type=str)
     parser.add_argument("--use_wandb", default=False, action="store_true")
     parser.add_argument("--grad_checkpoint", default=False, action="store_true")
+    parser.add_argument("--use_flash_attn", default=False, action="store_true")
     args = parser.parse_args()
     train(args)

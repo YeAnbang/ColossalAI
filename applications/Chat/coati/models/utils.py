@@ -146,3 +146,9 @@ def load_checkpoint(
         running_states["step"],
         running_states["sample_start_index"],
     )
+
+
+def disable_dropout(model: torch.nn.Module):
+    for module in model.modules():
+        if isinstance(module, torch.nn.Dropout):
+            module.p = 0.0

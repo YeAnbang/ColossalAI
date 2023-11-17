@@ -13,8 +13,7 @@ from colossal_llama2.dataset.loader import (
     load_tokenized_dataset,
     setup_distributed_dataloader,
 )
-
-# from colossal_llama2.utils.flash_attention_patch import replace_with_flash_attention
+from colossal_llama2.utils.flash_attention_patch import replace_with_flash_attention
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 import colossalai
@@ -89,6 +88,16 @@ def train(args):
         model = AutoModelForCausalLM.from_pretrained(args.pretrain)
         ref_model = AutoModelForCausalLM.from_pretrained(args.pretrain)
 
+        # debug tiny model
+        # model = transformers.LlamaForCausalLM(
+        #     transformers.LlamaConfig(hidden_size=512, intermediate_size=1536, num_attention_heads=8, num_hidden_layers=4
+        #     )
+        # )
+        # ref_model = transformers.LlamaForCausalLM(
+        #     transformers.LlamaConfig(hidden_size=512, intermediate_size=1536, num_attention_heads=8, num_hidden_layers=4
+        #     )
+        # )
+
         # TODO: set dropout to 0 here
         # for llama2, dropout is 0 by default, hence skip.
 
@@ -101,13 +110,22 @@ def train(args):
     if args.grad_checkpoint:
         model.gradient_checkpointing_enable()
         coordinator.print_on_master(msg="Gradient checkpointing enabled successfully")
-
-    # TODO: support flash attention
+    if args.use_flash_attn:
+        replace_with_flash_attention(model=model)
+        coordinator.print_on_master(msg="Flash-attention enabled successfully")
 
     # configure tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.pretrain)
+    tokenizer_dir = args.tokenizer_dir if args.tokenizer_dir is not None else args.pretrain
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir)
+    tokenizer.padding_side = "right"
     tokenizer.pad_token = tokenizer.eos_token
+    coordinator.print_on_master(
+        f"Tokenizer pad token: {tokenizer.pad_token}, Tokenizer padding side: {tokenizer.padding_side}"
+    )
 
+    # test_res = model.generate(tokenizer.encode("tell a story about a cat.\n", return_tensors='pt'),
+    #                           max_length=200, do_sample=True, top_k=50, top_p=0.95, temperature=0.9)
+    # coordinator.print_on_master(f"Test generate: {tokenizer.decode(test_res[0])}")
     # configure optimizer
     optim = HybridAdam(
         model_params=filter(lambda p: p.requires_grad, model.parameters())
@@ -130,6 +148,7 @@ def train(args):
         shuffle=True,
         drop_last=True,
         collate_fn=data_collator,
+        use_tp=args.tp > 1,
     )
 
     num_update_steps_per_epoch = len(train_dataloader) // args.accumulation_steps
@@ -146,16 +165,19 @@ def train(args):
         eta_min=0.1 * args.lr,
     )
 
-    # Flash attention will be disabled because it does NOT support fp32.
     default_dtype = torch.float16 if args.mixed_precision == "fp16" else torch.bfloat16
     torch.set_default_dtype(default_dtype)
-
     model, optim, _, train_dataloader, lr_scheduler = booster.boost(
         model=model,
         optimizer=optim,
         lr_scheduler=lr_scheduler,
         dataloader=train_dataloader,
     )
+
+    # test_res = model.generate(tokenizer.encode("tell a story about a cat.\n", return_tensors='pt').to(get_current_device()),
+    #                           max_length=200, do_sample=True, top_k=50, top_p=0.95, temperature=0.9)
+    # coordinator.print_on_master(f"Test generate: {tokenizer.decode(test_res[0])}")
+
     ref_model, _, _, _, _ = ref_booster.boost(model=ref_model, dataloader=train_dataloader)
     torch.set_default_dtype(torch.float)
 
@@ -197,6 +219,24 @@ def train(args):
         coordinator.print_on_master(
             f"Checkpoint loaded max CPU memory: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024:.2f} MB"
         )
+
+    # ============ debug tp ==================
+
+    # ref_model = ref_model.to(get_current_device())
+    # debug_prompt = "Human: <s>Tell me a story about cat.<\s>.\nAssistant: <s>long long time" # exepcted next token: "long long time ago"
+    # input_ids = tokenizer.encode(debug_prompt, return_tensors='pt').to(get_current_device())
+    # ref_top_1_token_id = ref_model(input_ids)["logits"].to(torch.float32).argmax(dim=-1).cpu()
+    # coordinator.print_on_master(f"ref_top_1_token_id: {ref_top_1_token_id}. text: {tokenizer.batch_decode(ref_top_1_token_id, skip_special_tokens=False)}")
+    # model_top_1_token_id = model(input_ids)["logits"].to(torch.float32).argmax(dim=-1).cpu()
+    # coordinator.print_on_master(f"model_top_1_token_id: {model_top_1_token_id}. text: {tokenizer.batch_decode(model_top_1_token_id, skip_special_tokens=False)}")
+    # # coordinator.print_on_master(tokenizer.batch_decode(ref_model.generate(input_ids, max_length=100, do_sample=True, top_k=50, top_p=0.95, temperature=0.9), skip_special_tokens=False))
+    # tokenizer.padding_side = "left"
+    # res = generate(ref_model, input_ids, tokenizer, 200,
+    #                             do_sample=True, temperature=0.9)
+    # coordinator.print_on_master(tokenizer.batch_decode(res, skip_special_tokens=False))
+    # res = generate(model, input_ids, tokenizer, 200,
+    #                             do_sample=True, temperature=0.9)
+    # coordinator.print_on_master(tokenizer.batch_decode(res, skip_special_tokens=False))
 
     trainer = DPOTrainer(
         actor=model,
@@ -256,18 +296,18 @@ if __name__ == "__main__":
         default=False,
         help="Freeze non embeddings parameters",
     )
-    parser.add_argument("--tp", type=int, default=4)
+    parser.add_argument("--tp", type=int, default=1)
     parser.add_argument("--zero", type=int, default=0)
     parser.add_argument("--pretrain", type=str, default=None)
+    parser.add_argument("--tokenizer_dir", type=str, default=None)
     parser.add_argument("--dataset", nargs="+", default=[])
     parser.add_argument(
         "--checkpoint_path", type=str, default=None, help="Checkpoint path if need to resume training form a checkpoint"
     )
     parser.add_argument("--save_dir", type=str, default="output")
-    parser.add_argument("--max_length", type=int, default=4096, help="Model max length")
+    parser.add_argument("--max_length", type=int, default=2048, help="Model max length")
     parser.add_argument("--max_epochs", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--max_len", type=int, default=512)
     parser.add_argument("--mixed_precision", type=str, default="fp16", choices=["fp16", "bf16"], help="Mixed precision")
     parser.add_argument("--lora_rank", type=int, default=0, help="low-rank adaptation matrices rank")
     parser.add_argument(
@@ -283,5 +323,6 @@ if __name__ == "__main__":
     parser.add_argument("--log_dir", default="logs", type=str)
     parser.add_argument("--use_wandb", default=False, action="store_true")
     parser.add_argument("--grad_checkpoint", default=False, action="store_true")
+    parser.add_argument("--use_flash_attn", default=False, action="store_true")
     args = parser.parse_args()
     train(args)

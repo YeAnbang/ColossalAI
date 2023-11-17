@@ -63,7 +63,15 @@ class SFTTrainer(SLTrainer):
             outputs = self.model(batch["input_ids"], attention_mask=batch["attention_mask"], labels=batch["labels"])
             loss = outputs.loss / self.accumulation_steps
             self.total_loss += loss.item()
+
+            # print(f"before {i}th step")
+            # debug_lora_print_gradient(self.model)
+            # print(loss)
             self.booster.backward(loss=loss, optimizer=self.optimizer)
+            # loss.backward()
+            # print(f"after {i}th step")
+            # debug_lora_print_gradient(self.model)
+            # exit()
             # gradient accumulation
             if (i + 1) % self.accumulation_steps == 0:
                 self.optimizer.step()

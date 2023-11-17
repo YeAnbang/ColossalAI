@@ -1,4 +1,5 @@
 from .base import Actor, Critic, RewardModel
+from .generation import generate
 from .lora import LoRAModule, convert_to_lora_module
 from .loss import DpoLoss, LogExpLoss, LogSigLoss, PolicyLoss, ValueLoss
 from .utils import load_checkpoint, save_checkpoint
@@ -18,4 +19,5 @@ __all__ = [
     "DpoLoss",
     "LogSigLoss",
     "LogExpLoss",
+    "generate",
 ]
