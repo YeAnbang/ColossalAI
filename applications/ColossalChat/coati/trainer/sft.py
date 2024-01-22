@@ -114,7 +114,7 @@ class SFTTrainer(SLTrainer):
                 if self.writer:
                     self.writer.add_scalar("train/loss", self.accumulative_meter.get("loss"), self.num_train_step)
                     self.writer.add_scalar("train/lr", self.scheduler.get_last_lr()[0], self.num_train_step)
-                    self.num_train_step += 1
+                self.num_train_step += 1
                 self.accumulative_meter.reset()
                 step_bar.update()
 
@@ -123,7 +123,6 @@ class SFTTrainer(SLTrainer):
                     self.save_dir is not None
                     and self.save_interval is not None
                     and (self.num_train_step + 1) % self.save_interval == 0
-                    and is_rank_0()
                 ):
                     save_checkpoint(
                         save_dir=self.save_dir,
