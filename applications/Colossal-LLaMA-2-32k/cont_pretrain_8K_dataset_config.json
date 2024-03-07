@@ -1,0 +1,19 @@
+{
+    "augmented_cont_pretrain_dataset": {
+        "path": "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment",
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment_full/Redpajama/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0
+    }
+}

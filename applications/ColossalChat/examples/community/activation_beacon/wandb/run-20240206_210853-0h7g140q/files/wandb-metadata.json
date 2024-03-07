@@ -1,0 +1,1085 @@
+{
+    "os": "Linux-5.4.0-144-generic-x86_64-with-glibc2.17",
+    "python": "3.8.18",
+    "heartbeatAt": "2024-02-06T13:08:54.872669",
+    "startedAt": "2024-02-06T13:08:53.287214",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--pretrain",
+        "/mnt/jfs/yeanbang/colossal-llama2-chat-7b",
+        "--tokenizer_dir",
+        "/mnt/jfs/yeanbang/colossal-llama2-chat-7b",
+        "--save_interval",
+        "1000",
+        "--original_dataset",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00000",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00001",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00002",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00003",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00004",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00005",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00006",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00007",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00008",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_original/arrow/part-00009",
+        "--augment_dataset",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00000",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00001",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00002",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00003",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00004",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00005",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00006",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00007",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00008",
+        "/mnt/jfs/yeanbang/dataset_tokenized/colossal-llama2-7b_8k_cont_pretrain_augment/arrow/part-00009",
+        "--save_path",
+        "/mnt/jfs/yeanbang/experiments/cont_pretrain/colossal-llama2-7b_cont_pretrain_32k_activation_beacon/ckptactivation_beacon-2024-02-06-21-08-02",
+        "--config_file",
+        "/mnt/jfs/yeanbang/experiments/cont_pretrain/colossal-llama2-7b_cont_pretrain_32k_activation_beacon/config-activation_beacon-2024-02-06-21-08-02.json",
+        "--lora_rank",
+        "0",
+        "--plugin",
+        "zero2",
+        "--batch_size",
+        "1",
+        "--max_epochs",
+        "1",
+        "--accumulation_steps",
+        "1",
+        "--lr",
+        "5e-5",
+        "--max_len",
+        "8192",
+        "--grad_checkpoint",
+        "--use_wandb"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePathLocal": "train.py",
+    "codePath": "applications/ColossalChat/examples/community/activation_beacon/train.py",
+    "git": {
+        "remote": "https://github.com/YeAnbang/ColossalAI.git",
+        "commit": "a8cc25ff868f6a86d191d269d952ef06c24c1afe"
+    },
+    "email": "yab0576@163.com",
+    "root": "/mnt/jfs/yeanbang/ColossalAI",
+    "host": "H800-80",
+    "username": "yeanbang",
+    "executable": "/home/yeanbang/.conda/envs/ColossalLong/bin/python",
+    "cpu_count": 96,
+    "cpu_count_logical": 192,
+    "cpu_freq": {
+        "current": 1039.967015625,
+        "min": 800.0,
+        "max": 3800.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.711,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.359,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.564,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 2679.15,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.702,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.555,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.675,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.26,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.721,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 805.498,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.666,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.306,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.529,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.359,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.243,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.721,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.173,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.324,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.368,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.73,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 794.463,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.192,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.758,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.702,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 803.754,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 799.778,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3094.343,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 801.75,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 795.811,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3085.648,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 1218.407,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.002,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 2434.615,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.905,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.916,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.11,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 848.543,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.144,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.139,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.369,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.077,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.889,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.938,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.911,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.144,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 801.985,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3115.5,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.435,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.64,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 805.177,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3099.997,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.002,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 2798.675,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.218,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.211,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.002,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.227,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.247,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.836,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.631,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.649,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.333,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 801.649,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.901,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.614,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.702,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.342,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.411,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.359,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.826,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.622,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.368,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.394,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.306,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 858.495,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.197,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.131,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 804.266,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.002,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 1399.088,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 2401.276,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.051,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.154,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.099,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.225,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.11,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.849,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.742,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.105,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.911,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.168,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.911,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.083,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.185,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.922,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.932,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 797.938,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 802.127,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 3800.0
+        },
+        {
+            "current": 3100.0,
+            "min": 800.0,
+            "max": 3800.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 873.8240966796875,
+            "used": 109.98556900024414
+        }
+    },
+    "gpu": "NVIDIA H800",
+    "gpu_count": 8,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        },
+        {
+            "name": "NVIDIA H800",
+            "memory_total": 85520809984
+        }
+    ],
+    "memory": {
+        "total": 2015.4875946044922
+    }
+}

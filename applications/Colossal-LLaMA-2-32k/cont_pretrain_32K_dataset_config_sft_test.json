@@ -1,0 +1,21 @@
+{
+    "common": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_original_sft_full/common/tokenized_and_packed/part-00009"
+        ],
+        "type": "sft",
+        "to_keep_ratio": 1.0,
+        "total_samples": 120430,
+        "total_input_tokens": 3744781138,
+        "total_label_tokens": 1586313616
+    }
+}

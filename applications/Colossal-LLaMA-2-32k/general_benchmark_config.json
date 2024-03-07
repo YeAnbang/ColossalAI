@@ -1,0 +1,34 @@
+{
+    "model": [
+        {
+            "name": "Colossal-llama2-7B-base",
+            "model_class": "HuggingFaceCausalLM",
+            "parameters": {
+                "path": "/home/zhongyuting/model/Colossal-LLaMA-2-7b-base",
+                "model_max_length": 4096,
+                "tokenizer_path": "/home/zhongyuting/model/Colossal-LLaMA-2-7b-base",
+                "tokenizer_kwargs": {
+                    "use_fast": false,
+                    "trust_remote_code": true
+                },
+                "peft_path": null,
+                "model_kwargs": {
+                    "trust_remote_code": true
+                },
+                "prompt_template": "plain",
+                "batch_size": 4
+            }
+        }
+    ],
+    "dataset": [
+        {
+            "name": "MMLU",
+            "dataset_class": "MMLUDataset",
+            "debug": false,
+            "few_shot": true,
+            "path": "/home/yeanbang/data/ColossalEval_data/data/mmlu",
+            "save_path": "data/experiments/evaluation/cont_pretrain_32K/mmlu/test",
+            "metrics": ["first_token_accuracy", "single_choice_accuracy"]
+        }
+    ]
+}

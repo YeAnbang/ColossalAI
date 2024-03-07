@@ -1,0 +1,458 @@
+{
+    "RedPajamaBook": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaBook/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.3,
+        "total_samples": 148220,
+        "total_input_tokens": 4856872960,
+        "total_label_tokens": 4856694768
+    },
+    "RedPajamaPaper": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaPaper/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.2,
+        "total_samples": 107090,
+        "total_input_tokens": 2666379359,
+        "total_label_tokens": 2665573135
+    },
+    "RedPajamaWiki": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full/RedPajamaWiki/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.07,
+        "total_samples": 183099,
+        "total_input_tokens": 5590736380,
+        "total_label_tokens": 5561664744
+    },
+    "zh-books": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-books/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 36936,
+        "total_input_tokens": 1210318848,
+        "total_label_tokens": 1210288908
+    },
+    "zh-paper": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_full_zh/zh-paper/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 1200,
+        "total_input_tokens": 39321600,
+        "total_label_tokens": 39299660
+    },
+    "Perl": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Perl/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.0,
+        "total_samples": 188,
+        "total_input_tokens": 1230487,
+        "total_label_tokens": 1229495
+    },
+    "C++": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C++/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 610,
+        "total_input_tokens": 14591957,
+        "total_label_tokens": 14580293
+    },
+    "TypeScript": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/TypeScript/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.0,
+        "total_samples": 210,
+        "total_input_tokens": 2540393,
+        "total_label_tokens": 2536773
+    },
+    "SQL": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/SQL/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 188,
+        "total_input_tokens": 1893514,
+        "total_label_tokens": 1891298
+    },
+    "C#": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C#/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 322,
+        "total_input_tokens": 7178886,
+        "total_label_tokens": 7167306
+    },
+    "Rust": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Rust/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 118,
+        "total_input_tokens": 309899,
+        "total_label_tokens": 309427
+    },
+    "Kotlin": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Kotlin/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 102,
+        "total_input_tokens": 142272,
+        "total_label_tokens": 141864
+    },
+    "C": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/C/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 120,
+        "total_input_tokens": 3620802,
+        "total_label_tokens": 3620322
+    },
+    "Matlab": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Matlab/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 190,
+        "total_input_tokens": 2218958,
+        "total_label_tokens": 2215138
+    },
+    "Ruby": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Ruby/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 204,
+        "total_input_tokens": 3576484,
+        "total_label_tokens": 3566576
+    },
+    "Swift": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Swift/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 184,
+        "total_input_tokens": 517989,
+        "total_label_tokens": 516769
+    },
+    "Python": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Python/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 504,
+        "total_input_tokens": 12216522,
+        "total_label_tokens": 12204926
+    },
+    "Java": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Java/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.8,
+        "total_samples": 582,
+        "total_input_tokens": 14460899,
+        "total_label_tokens": 14449247
+    },
+    "HTML": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/HTML/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.5,
+        "total_samples": 1044,
+        "total_input_tokens": 26050779,
+        "total_label_tokens": 26039715
+    },
+    "JavaScript": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/JavaScript/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 152,
+        "total_input_tokens": 4504278,
+        "total_label_tokens": 4503670
+    },
+    "Shell": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/Shell/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 1.0,
+        "total_samples": 184,
+        "total_input_tokens": 1170372,
+        "total_label_tokens": 1167540
+    },
+    "CSS": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/CSS/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.6,
+        "total_samples": 924,
+        "total_input_tokens": 22931893,
+        "total_label_tokens": 22922925
+    },
+    "PHP": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/PHP/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.5,
+        "total_samples": 998,
+        "total_input_tokens": 25098435,
+        "total_label_tokens": 25087319
+    },
+    "GO": {
+        "tokenized_dataset_dir": [
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00000",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00001",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00002",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00003",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00004",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00005",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00006",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00007",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00008",
+            "/home/yeanbang/data/dataset/augmented_cont_pretrain_dataset/dataset_tokenized/colossal-llama2-7b_32k_cont_pretrain_augment_code_full/GO/tokenized_and_packed/part-00009"
+        ],
+        "type": "cpt",
+        "to_keep_ratio": 0.8,
+        "total_samples": 608,
+        "total_input_tokens": 14865720,
+        "total_label_tokens": 14854228
+    }
+}

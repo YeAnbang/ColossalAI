@@ -1,0 +1,39 @@
+{
+    "model": [
+        {
+            "name": "Colossal-llama2-7B-32K-dynamic-ntk",
+            "model_class": "HuggingFaceCausalLM",
+            "parameters": {
+                "path": "/home/zhongyuting/model/Colossal-LLaMA-2-7b-base",
+                "model_max_length": 32768,
+                "tokenizer_path": "/home/zhongyuting/model/Colossal-LLaMA-2-7b-base",
+                "tokenizer_kwargs": {
+                    "use_fast": false,
+                    "trust_remote_code": true
+                },
+                "peft_path": null,
+                "model_kwargs": {
+                    "trust_remote_code": true,
+                    "max_length": 32768,
+                    "rope_scaling": {
+                        "factor": 8.0,
+                        "type": "dynamic"
+                    }
+                },
+                "prompt_template": "plain",
+                "batch_size": 1
+            }
+        }
+    ],
+    "dataset": [
+        {
+            "name": "LongBench",
+            "dataset_class": "LongBenchDataset",
+            "debug": false,
+            "few_shot": false,
+            "path": "/home/yeanbang/data/ColossalEval_data/data/LongBench",
+            "save_path": "data/experiments/evaluation/cont_pretrain_32K/LongBench",
+            "metrics": ["f1_score", "f1_zh_score", "rouge_score", "rouge_zh_score"]
+        }
+    ]
+}

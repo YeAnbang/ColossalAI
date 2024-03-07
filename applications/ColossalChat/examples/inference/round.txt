@@ -1,0 +1,504 @@
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>calculate 1+3</s>Assistant: <s>Human: how to find the maximum sum and average of two numbers</s>
+
+==========
+
+
+==========
+round 2:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>calculate 1+3</s>Assistant: <s>Human: how to find the maximum sum and average of two numbers</s>Human: <s>who is the first president of the US</s>Assistant: <s>s</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>who is the first president of the US?</s>Assistant: <s>George Washington was the first President of the United States. He took office on April 30, 1789 and served one term.</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>who is George Washington's wife?</s>Assistant: <s>George Washington's wife was Martha Washington. She was born Martha Dandridge and married George Washington on January 12, 1759. They had two children together, John and Abigail, and Martha spent the rest of her life with George Washington, accompanying him on his political career and through the American Revolution. Martha Washington was a skilled farmer and managed her own estate after George's death. She also devoted herself to charity and education, establishing schools and setting up orphanages. Martha died in 1812, and is buried next to George in the family tomb at Mount Vernon.</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手\n请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答\n用户现在给你的文档是由RCREIT（REITs研究中心）联合主办的第八届不动产证券化合作发展大会定于11月9日在北京隆重举行，同期将举办2023不动产证券化“前沿奖”颁奖盛典、ESG与可持续投资合作发展大会（11月8日）、第十五届AHF商业地产与城市更新大会（11月8-9日）、第十一届HAMA中国区酒店及公寓资产管理大会（11月8-9日）。\n2023年11月9日，星期四\n（11月9日上午）\n主会场议程\n08:00-09:00\n接待参会人员签到\n09:00-09:10\n开幕致辞\n09:10-09:30\n主题演讲：中国REITs市场最新发展情况\n09:30-09:50\n主题演讲：共筑公募REITs产业链发展生态圈\n09:50-10:10\n主题演讲：公募REITs的长期投资价值\n10:10-10:30\n主题演讲：消费基础设施REITs践行ESG理念实现高质量发展\n10:30-11:00\n茶歇交流、展台参观（30分钟）\n11:00-11:20\n主题演讲：保险资管参与ABS及REITs带来多赢\n11:20-12:20\n圆桌讨论：多层次REITs市场发展机遇\n12:20-14:00\n午餐交流，展台参观（100分钟）\n（11月9日下午）\n主会场议程\n14:00-14:20\n主题演讲：资产证券化赋能租赁住房市场\n14:20-14:40\n主题演讲：商业不动产证券化的估值重塑\n14:40-15:00\n主题演讲：证券化助力城市更新，促进区域经济发展\n15:00-16:00\n圆桌讨论：新发展理念下ABS与REITs产品对中国经济发展的战略价值和意义\n16:00-16:30\n茶歇交流、展台参观（30分钟）\n16:30-16:50\n主题演讲：资产证券化助推行业绿色低碳发展\n16:50-17:50\n圆桌讨论：凝聚共识启新程，多视角下的不动产证券化项目经验交流，畅想行业未来发展\n19:00-21:00\n2023年度不动产证券化“前沿奖”颁奖典礼\n21:00\n峰会闭幕\n部分往届回顾图集截至2023年9月8日09:57，中证创新药产业指数(931152)上涨0.35%，成分股荣昌生物(688\n小明最喜欢的实习的地点就是上海人工智能实验室。\n331)上涨4.46%，人福医药(600079)上涨2.60%，微芯生物(688321)上涨1.85%，皓元医药(688131)上涨1.72%，贝达药业(300558)上涨1.51%。创新药企ETF(560900)上涨0.12%，最新价报0.83元。\n从估值层面来看，创新药企ETF跟踪的中证创新药产业指数最新市盈率（PE-TTM）仅23.63倍，处于近1年3.69%的分位，即估值低于近1年96.31%以上的时间，处于历史低位。\n创新药企ETF紧密跟踪中证创新药产业指数，中证创新药产业指数从沪深市场主营业务涉及创新药研发的上市公司证券中，选取不超过50只最具代表性上市公司证券作为指数样本，以反映沪深市场创新药产业上市公司证券的整体表现。\n数据显示，截至2023年8月31日，中证创新药产业指数(931152)前十大权重股分别为药明康德(603259)、恒瑞医药(600276)、智飞生物(300122)、长春高新(000661)、沃森生物(300142)、复星医药(600196)、泰格医药(300347)、华东医药(000963)、科伦药业(002422)、凯莱英(002821)，前十大权重股合计占比54.9%。\n国泰君安证券表示，2023年以来，医药生物相对涨幅有所回落，估值持续降低，相对于A股/沪深300的相对溢价率已经跌落至近十年最低点。2023.8.31相对A股溢价率降低至95.2%，相对于沪深300溢价率低至118.8%，看好具备刚需属性的医药行业配置价值。截至2023年9月15日14:38，港股通100ETF(513900)上涨1.00%，最新价报0.81元，盘中成交额已达1786万元，换手率9.73%。\n资金流入方面，港股通100ETF近10个交易日内有7日资金净流入，合计“吸金”1373.66万元。\n值得注意的是，该基金跟踪的中华交易服务港股通精选100人民币指数估值处于历史低位，最新市净率PB为1.32倍，低于指数近1年89.47%以上的时间，估值性价比突出。\n港股通100ETF紧密跟踪中华交易服务港股通精选100人民币指数，中华交易服务(沪深港)互联互通指数系列为证券价格指数，包括中华交易服务沪深港300指数(中华沪深港300),旨在反映“沪港通”及“深港通”合资格证券（合称“互联互通”）之整体表现,以及中华交易服务港股通精选100指数(中华港股通精选100),旨在反映“港股通证券”内香港独有证券之整体表现。\n数据显示，截至2023年8月31日，中华交易服务港股通精选100人民币指数(CES006)前十大权重股分别为汇丰控股(00005)、腾讯控股(00700)、友邦保险(01299)、美团-W(03690)、香港交易所(00388)、保诚(02378)、小米集团-W(01810)、理想汽车-W(02015)、渣打集团(02888)、快手-W(01024)，前十大权重股合计占比52.83%。\n国金证券表示，港股“政策底”已明确、中报盈利改善趋势渐明、市场底或已渐近，当前投资的潜在风险回报比或较高。盈利端来看，目前国内经济仍处于弱复苏阶段，部分经济指标读数低于预期，悲观情绪已在此前市场下跌中得到较为充分的释放；而8月底市场翘首以待的政策面增量刺激举措终于相继出台，有望大力提振对中国经济增长前景的预期，从而利于港股风险偏好升温。海外流动性方面，8月以来美债收益率上行压制港股，不过近期美国CPI增速持续回落，中长期看FED或在明年上半年结束紧缩周期，在预期的推动下美债收益率中枢势必走低，则对港股流动性构成利好。\n港股通100ETF(513900)，场外联接(A类：005813；C类：005814)。　　为更好地满足广大投资者的需求，摩根基金管理（中国）有限公司（以下简称“本公司”或“基金管理人”）根据《中华人民共和国证券投资基金法》、《公开募集证券投资基金运作管理办法》、《公开募集证券投资基金信息披露管理办法》等法律法规的规定和《摩根亚太优势混合型证券投资基金（QDII）基金合同》（以下简称“基金合同”）的有关约定，经与基金托管人中国工商银行股份有限公司协商一致，决定对本公司管理的摩根亚太优势混合型证券投资基金(QDII)（以下简称“本基金”）增设收取销售服务费的C类基金份额，并对基金合同和托管协议作相应修改；同时因本公司的股东及实际控制人变更，根据中国证券监督管理委员会要求，拟对本基金的基金合同和托管协议增加临时基金管理人条款。本公司将同步修改招募说明书、\n\n现在请问：小明最喜欢的实习地点是哪里？在回答之前，请思考文档中与此问题最相关的内容是什么。请按照“小明最喜欢的实习地点就是________。”的格式回答。</s>Assistant: <s>1.小明最喜欢的实习地点就是上海人工智能实验室。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手\n请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答\n用户现在给你的文档是由RCREIT（REITs研究中心）联合主办的第八届不动产证券化合作发展大会定于11月9日在北京隆重举行，同期将举办2023不动产证券化“前沿奖”颁奖盛典、ESG与可持续投资合作发展大会（11月8日）、第十五届AHF商业地产与城市更新大会（11月8-9日）、第十一届HAMA中国区酒店及公寓资产管理大会（11月8-9日）。\n2023年11月9日，星期四\n（11月9日上午）\n主会场议程\n08:00-09:00\n接待参会人员签到\n09:00-09:10\n开幕致辞\n09:10-09:30\n主题演讲：中国REITs市场最新发展情况\n09:30-09:50\n主题演讲：共筑公募REITs产业链发展生态圈\n09:50-10:10\n主题演讲：公募REITs的长期投资价值\n10:10-10:30\n主题演讲：消费基础设施REITs践行ESG理念实现高质量发展\n10:30-11:00\n茶歇交流、展台参观（30分钟）\n11:00-11:20\n主题演讲：保险资管参与ABS及REITs带来多赢\n11:20-12:20\n圆桌讨论：多层次REITs市场发展机遇\n12:20-14:00\n午餐交流，展台参观（100分钟）\n（11月9日下午）\n主会场议程\n14:00-14:20\n主题演讲：资产证券化赋能租赁住房市场\n14:20-14:40\n主题演讲：商业不动产证券化的估值重塑\n14:40-15:00\n主题演讲：证券化助力城市更新，促进区域经济发展\n15:00-16:00\n圆桌讨论：新发展理念下ABS与REITs产品对中国经济发展的战略价值和意义\n16:00-16:30\n茶歇交流、展台参观（30分钟）\n16:30-16:50\n主题演讲：资产证券化助推行业绿色低碳发展\n16:50-17:50\n圆桌讨论：凝聚共识启新程，多视角下的不动产证券化项目经验交流，畅想行业未来发展\n19:00-21:00\n2023年度不动产证券化“前沿奖”颁奖典礼\n21:00\n峰会闭幕\n部分往届回顾图集截至2023年9月8日09:57，中证创新药产业指数(931152)上涨0.35%，成分股荣昌生物(688331)上涨4.46%，人福医药(600079)上涨2.60%，微芯生物(688321)上涨1.85%，皓元医药(688131)上涨1.72%，贝达药业(300558)上涨1.51%。创新药企ETF(560900)上涨0.12%，最新价报0.83元。\n从估值层面来看，创新药企ETF跟踪的中证创新药产业指数最新市盈率（PE-TTM）仅23.63倍，处于近1年3.69%的分位，即估值低于近1年96.31%以上的时间，处于历史低位。\n创新药企ETF紧密跟踪中证创新药产业指数，中证创新药产业指数从沪深市场主营业务涉及创新药研发的上市公司证券中，选取不超过50只最具代表性上市公司证券作为指数样本，以反映沪深市场创新药产业上市公司证券的整体表现。\n数据显示，截至2023年8月31日，中证创新药产业指数(931152)前十大权重股分别为药明康德(603259)、恒瑞医药(600276)、智飞生物(300122)、长春高新(000661)、沃森生物(300142)、复星医药(600196)、泰格医药(300347)、华东医药(000963)、科伦药业(002422)、凯莱英(002821)，前十大权重股合计占比54.9%。\n国泰君安证券表示，2023年以来，医药生物相对涨幅有所回落，估值持续降低，相对于A股/沪深300的相对溢价率已经跌落至近十年最低点。2023.8.31相对A\n小明最喜欢的实习的地点就是上海人工智能实验室。\n股溢价率降低至95.2%，相对于沪深300溢价率低至118.8%，看好具备刚需属性的医药行业配置价值。截至2023年9月15日14:38，港股通100ETF(513900)上涨1.00%，最新价报0.81元，盘中成交额已达1786万元，换手率9.73%。\n资金流入方面，港股通100ETF近10个交易日内有7日资金净流入，合计“吸金”1373.66万元。\n值得注意的是，该基金跟踪的中华交易服务港股通精选100人民币指数估值处于历史低位，最新市净率PB为1.32倍，低于指数近1年89.47%以上的时间，估值性价比突出。\n港股通100ETF紧密跟踪中华交易服务港股通精选100人民币指数，中华交易服务(沪深港)互联互通指数系列为证券价格指数，包括中华交易服务沪深港300指数(中华沪深港300),旨在反映“沪港通”及“深港通”合资格证券（合称“互联互通”）之整体表现,以及中华交易服务港股通精选100指数(中华港股通精选100),旨在反映“港股通证券”内香港独有证券之整体表现。\n数据显示，截至2023年8月31日，中华交易服务港股通精选100人民币指数(CES006)前十大权重股分别为汇丰控股(00005)、腾讯控股(00700)、友邦保险(01299)、美团-W(03690)、香港交易所(00388)、保诚(02378)、小米集团-W(01810)、理想汽车-W(02015)、渣打集团(02888)、快手-W(01024)，前十大权重股合计占比52.83%。\n国金证券表示，港股“政策底”已明确、中报盈利改善趋势渐明、市场底或已渐近，当前投资的潜在风险回报比或较高。盈利端来看，目前国内经济仍处于弱复苏阶段，部分经济指标读数低于预期，悲观情绪已在此前市场下跌中得到较为充分的释放；而8月底市场翘首以待的政策面增量刺激举措终于相继出台，有望大力提振对中国经济增长前景的预期，从而利于港股风险偏好升温。海外流动性方面，8月以来美债收益率上行压制港股，不过近期美国CPI增速持续回落，中长期看FED或在明年上半年结束紧缩周期，在预期的推动下美债收益率中枢势必走低，则对港股流动性构成利好。\n港股通100ETF(513900)，场外联接(A类：005813；C类：005814)。　　为更好地满足广大投资者的需求，摩根基金管理（中国）有限公司（以下简称“本公司”或“基金管理人”）根据《中华人民共和国证券投资基金法》、《公开募集证券投资基金运作管理办法》、《公开募集证券投资基金信息披露管理办法》等法律法规的规定和《摩根亚太优势混合型证券投资基金（QDII）基金合同》（以下简称“基金合同”）的有关约定，经与基金托管人中国工商银行股份有限公司协商一致，决定对本公司管理的摩根亚太优势混合型证券投资基金(QDII)（以下简称“本基金”）增设收取销售服务费的C类基金份额，并对基金合同和托管协议作相应修改；同时因本公司的股东及实际控制人变更，根据中国证券监督管理委员会要求，拟对本基金的基金合同和托管协议增加临时基金管理人条款。本公司将同步修改招募说明书、\n\n现在请问：小明最喜欢的实习地点是哪里？在回答之前，请思考文档中与此问题最相关的内容是什么。请按照“小明最喜欢的实习地点就是________。”的格式回答。</s>Assistant: <s>，并提供相关信息和背景。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手\n请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答\n用户现在给你的文档是由RCREIT（REITs研究中心）联合主办的第八届不动产证券化合作发展大会定于11月9日在北京隆重举行，同期将举办2023不动产证券化“前沿奖”颁奖盛典、ESG与可持续投资合作发展大会（11月8日）、第十五届AHF商业地产与城市更新大会（11月8-9日）、第十一届HAMA中国区酒店及公寓资产管理大会（11月8-9日）。\n2023年11月9日，星期四\n（11月9日上午）\n主会场议程\n08:00-09:00\n接待参会人员签到\n09:00-09:10\n开幕致辞\n09:10-09:30\n主题演讲：中国REITs市场最新发展情况\n09:30-09:50\n主题演讲：共筑公募REITs产业链发展生态圈\n09:50-10:10\n主题演讲：公募REITs的长期投资价值\n10:10-10:30\n主题演讲：消费基础设施REITs践行ESG理念实现高质量发展\n10:30-11:00\n茶歇交流、展台参观（30分钟）\n11:00-11:20\n主题演讲：保险资管参与ABS及REITs带来多赢\n11:20-12:20\n圆桌讨论：多层次REITs市场发展机遇\n12:20-14:00\n午餐交流，展台参观（100分钟）\n（11月9日下午）\n主会场议程\n14:00-14:20\n主题演讲：资产证券化赋能租赁住房市场\n14:20-14:40\n主题演讲：商业不动产证券化的估值重塑\n14:40-15:00\n主题演讲：证券化助力城市更新，促进区域经济发展\n15:00-16:00\n圆桌讨论：新发展理念下ABS与REITs产品对中国经济发展的战略价值和意义\n16:00-16:30\n茶歇交流、展台参观（30分钟）\n16:30-16:50\n主题演讲：资产证券化助推行业绿色低碳发展\n16:50-17:50\n圆桌讨论：凝聚共识启新程，多视角下的不动产证券化项目经验交流，畅想行业未来发展\n19:00-21:00\n2023年度不动产证券化“前沿奖”颁奖典礼\n21:00\n峰会闭幕\n部分往届回顾图集截至2023年9月8日09:57，中证创新药产业指数(931152)上涨0.35%，成分股荣昌生物(688331)上涨4.46%，人福医药(600079)上涨2.60%，微芯生物(688321)上涨1.85%，皓元医药(688131)上涨1.72%，贝达药业(300558)上涨1.51%。创新药企ETF(560900)上涨0.12%，最新价报0.83元。\n从估值层面来看，创新药企ETF跟踪的中证创新药产业指数最新市盈率（PE-TTM）仅23.63倍，处于近1年3.69%的分位，即估值低于近1年96.31%以上的时间，处于历史低位。\n创新药企ETF紧密跟踪中证创新药产业指数，中证创新药产业指数从沪深市场主营业务涉及创新药研发的上市公司证券中，选取不超过50只最具代表性上市公司证券作为指数样本，以反映沪深市场创新药产业上市公司证券的整体表现。\n数据显示，截至2023年8月31日，中证创新药产业指数(931152)前十大权重股分别为药明康德(603259)、恒瑞医药(600276)、智飞生物(300122)、长春高新(000661)、沃森生物(300142)、复星医药(600196)、泰格医药(300347)、华东医药(000963)、科伦药业(002422)、凯莱英(002821)，前十大权重股合计占比54.9%。\n国泰君安证券表示，2023年以来，医药生物相对涨幅有所回落，估值持续降低，相对于A股/沪深300的相对溢价率已经跌落至近十年最低点。2023.8.31相对A\n小明最喜欢的实习的地点就是上海人工智能实验室。\n股溢价率降低至95.2%，相对于沪深300溢价率低至118.8%，看好具备刚需属性的医药行业配置价值。截至2023年9月15日14:38，港股通100ETF(513900)上涨1.00%，最新价报0.81元，盘中成交额已达1786万元，换手率9.73%。\n资金流入方面，港股通100ETF近10个交易日内有7日资金净流入，合计“吸金”1373.66万元。\n值得注意的是，该基金跟踪的中华交易服务港股通精选100人民币指数估值处于历史低位，最新市净率PB为1.32倍，低于指数近1年89.47%以上的时间，估值性价比突出。\n港股通100ETF紧密跟踪中华交易服务港股通精选100人民币指数，中华交易服务(沪深港)互联互通指数系列为证券价格指数，包括中华交易服务沪深港300指数(中华沪深港300),旨在反映“沪港通”及“深港通”合资格证券（合称“互联互通”）之整体表现,以及中华交易服务港股通精选100指数(中华港股通精选100),旨在反映“港股通证券”内香港独有证券之整体表现。\n数据显示，截至2023年8月31日，中华交易服务港股通精选100人民币指数(CES006)前十大权重股分别为汇丰控股(00005)、腾讯控股(00700)、友邦保险(01299)、美团-W(03690)、香港交易所(00388)、保诚(02378)、小米集团-W(01810)、理想汽车-W(02015)、渣打集团(02888)、快手-W(01024)，前十大权重股合计占比52.83%。\n国金证券表示，港股“政策底”已明确、中报盈利改善趋势渐明、市场底或已渐近，当前投资的潜在风险回报比或较高。盈利端来看，目前国内经济仍处于弱复苏阶段，部分经济指标读数低于预期，悲观情绪已在此前市场下跌中得到较为充分的释放；而8月底市场翘首以待的政策面增量刺激举措终于相继出台，有望大力提振对中国经济增长前景的预期，从而利于港股风险偏好升温。海外流动性方面，8月以来美债收益率上行压制港股，不过近期美国CPI增速持续回落，中长期看FED或在明年上半年结束紧缩周期，在预期的推动下美债收益率中枢势必走低，则对港股流动性构成利好。\n港股通100ETF(513900)，场外联接(A类：005813；C类：005814)。　　为更好地满足广大投资者的需求，摩根基金管理（中国）有限公司（以下简称“本公司”或“基金管理人”）根据《中华人民共和国证券投资基金法》、《公开募集证券投资基金运作管理办法》、《公开募集证券投资基金信息披露管理办法》等法律法规的规定和《摩根亚太优势混合型证券投资基金（QDII）基金合同》（以下简称“基金合同”）的有关约定，经与基金托管人中国工商银行股份有限公司协商一致，决定对本公司管理的摩根亚太优势混合型证券投资基金(QDII)（以下简称“本基金”）增设收取销售服务费的C类基金份额，并对基金合同和托管协议作相应修改；同时因本公司的股东及实际控制人变更，根据中国证券监督管理委员会要求，拟对本基金的基金合同和托管协议增加临时基金管理人条款。本公司将同步修改招募说明书、\n\n现在请问：小明最喜欢的实习地点是哪里？在回答之前，请思考文档中与此问题最相关的内容是什么。请按照“小明最喜欢的实习地点就是________。”的格式回答。</s>Assistant: <s>这段话应该是一句话，不能是一些行文，例如“我喜欢去上海实习”。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手\n请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答\n用户现在给你的文档是\n由RCREIT（REITs研究中心）联合主办的第八届不动产证券化合作发展大会定于11月9日在北京隆重举行，同期将举办2023不动产证券化“前沿奖”颁奖盛典、ESG与可持
+续投资合作发展大会（11月8日）、第十五届AHF商业地产与城市更新大会（11月8-9日）、第十一届HAMA中国区酒店及公寓资产管理大会（11月8-9日）。\n2023年11月9日，星期四\n（11月9日上午）\n主会场议程\n08:00-09:00\n接待参会人员签到\n09:00-09:10\n开幕致辞\n09:10-09:30\n主题演讲：中国REITs
+市场最新发展情况\n09:30-09:50\n主题演讲：共筑公募REITs产业链发展生态圈\n09:50-10:10\n主题演讲：公募REITs的长期投资价值\n10:10-10:30\n主题演讲：消费基础设施REITs践行ESG理念实现高质量发展\n10:30-11:00\n茶歇交流、展台参观（30分钟）\n11:00-11:20\n主题演讲：保险资管参与ABS及REIT
+s带来多赢\n11:20-12:20\n圆桌讨论：多层次REITs市场发展机遇\n12:20-14:00\n午餐交流，展台参观（100分钟）\n（11月9日下午）\n主会场议程\n14:00-14:20\n主题演讲：资产证券化赋能租赁住房市场\n14:20-14:40\n主题演讲：商业不动产证券化的估值重塑\n14:40-15:00\n主题演讲：证券化助力城市更
+新，促进区域经济发展\n15:00-16:00\n圆桌讨论：新发展理念下ABS与REITs产品对中国经济发展的战略价值和意义\n16:00-16:30\n茶歇交流、展台参观（30分钟）\n16:30-16:50\n主题演讲：资产证券化助推行业绿色低碳发展\n16:50-17:50\n圆桌讨论：凝聚共识启新程，多视角下的不动产证券化项目经验交流
+，畅想行业未来发展\n19:00-21:00\n2023年度不动产证券化“前沿奖”颁奖典礼\n21:00\n峰会闭幕\n部分往届回顾图集截至2023年9月8日09:57，中证创新药产业指数(931152)上涨0.35%，成分股荣昌生物(688331)上涨4.46%，人福医药(600079)上涨2.60%，微芯生物(688321)上涨1.85%，皓元医药(688131)上涨1.7
+2%，贝达药业(300558)上涨1.51%。创新药企ETF(560900)上涨0.12%，最新价报0.83元。\n从估值层面来看，创新药企ETF跟踪的中证创新药产业指数最新市盈率（PE-TTM）仅23.63倍，处于近1年3.69%的分位，即估值低于近1年96.31%以上的时间，处于历史低位。\n创新药企ETF紧密跟踪中证创新药产业指数，中
+证创新药产业指数从沪深市场主营业务涉及创新药研发的上市公司证券中，选取不超过50只最具代表性上市公司证券作为指数样本，以反映沪深市场创新药产业上市公司证券的整体表现。\n数据显示，截至2023年8月31日，中证创新药产业指数(931152)前十大权重股分别为药明康德(603259)、恒瑞医药(600276)
+、智飞生物(300122)、长春高新(000661)、沃森生物(300142)、复星医药(600196)、泰格医药(300347)、华东医药(000963)、科伦药业(002422)、凯莱英(002821)，前十大权重股合计占比54.9%。\n国泰君安证券表示，2023年以来，医药生物相对涨幅有所回落，估值持续降低，相对于A股/沪深300的相对溢价率已
+经跌落至近十年最低点。2023.8.31相对A\n小明最喜欢的实习的地点就是上海人工智能实验室。\n股溢价率降低至95.2%，相对于沪深300溢价率低至118.8%，看好具备刚需属性的医药行业配置价值。截至2023年9月15日14:38，港股通100ETF(513900)上涨1.00%，最新价报0.81元，盘中成交额已达1786万元，换手
+率9.73%。\n资金流入方面，港股通100ETF近10个交易日内有7日资金净流入，合计“吸金”1373.66万元。\n值得注意的是，该基金跟踪的中华交易服务港股通精选100人民币指数估值处于历史低位，最新市净率PB为1.32倍，低于指数近1年89.47%以上的时间，估值性价比突出。\n港股通100ETF紧密跟踪中华交易服
+务港股通精选100人民币指数，中华交易服务(沪深港)互联互通指数系列为证券价格指数，包括中华交易服务沪深港300指数(中华沪深港300),旨在反映“沪港通”及“深港通”合资格证券（合称“互联互通”）之整体表现,以及中华交易服务港股通精选100指数(中华港股通精选100),旨在反映“港股通证券”内香港独有证
+券之整体表现。\n数据显示，截至2023年8月31日，中华交易服务港股通精选100人民币指数(CES006)前十大权重股分别为汇丰控股(00005)、腾讯控股(00700)、友邦保险(01299)、美团-W(03690)、香港交易所(00388)、保诚(02378)、小米集团-W(01810)、理想汽车-W(02015)、渣打集团(02888)、快手-W(01024)，
+前十大权重股合计占比52.83%。\n国金证券表示，港股“政策底”已明确、中报盈利改善趋势渐明、市场底或已渐近，当前投资的潜在风险回报比或较高。盈利端来看，目前国内经济仍处于弱复苏阶段，部分经济指标读数低于预期，悲观情绪已在此前市场下跌中得到较为充分的释放；而8月底市场翘首以待的政策
+面增量刺激举措终于相继出台，有望大力提振对中国经济增长前景的预期，从而利于港股风险偏好升温。海外流动性方面，8月以来美债收益率上行压制港股，不过近期美国CPI增速持续回落，中长期看FED或在明年上半年结束紧缩周期，在预期的推动下美债收益率中枢势必走低，则对港股流动性构成利好。\n港
+股通100ETF(513900)，场外联接(A类：005813；C类：005814)。　　为更好地满足广大投资者的需求，摩根基金管理（中国）有限公司（以下简称“本公司”或“基金管理人”）根据《中华人民共和国证券投资基金法》、《公开募集证券投资基金运作管理办法》、《公开募集证券投资基金信息披露管理办法》等法律
+法规的规定和《摩根亚太优势混合型证券投资基金（QDII）基金合同》（以下简称“基金合同”）的有关约定，经与基金托管人中国工商银行股份有限公司协商一致，决定对本公司管理的摩根亚太优势混合型证券投资基金(QDII)（以下简称“本基金”）增设收取销售服务费的C类基金份额，并对基金合同和托管协议
+作相应修改；同时因本公司的股东及实际控制人变更，根据中国证券监督管理委员会要求，拟对本基金的基金合同和托管协议增加临时基金管理人条款。本公司将同步修改招募说明书、\n\n现在请问：小明最喜欢的实习地点是哪里？在回答之前，请思考文档中与此问题最相关的内容是什么。请按照“小明最喜欢
+的实习地点就是________。”的格式回答。</s>Assistant: <s>设问，请</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手
+请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>（1）在文档中，“淋巴”，“淋巴”，“淋巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”。</s>
+
+==========
+
+
+==========
+round 2:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手
+请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>（1）在文档中，“淋巴”，“淋巴”，“淋巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”，“測巴”。</s>Human: <s>1+1 是多少</s>Assistant: <s></s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>1+1 是多少？</s>Assistant: <s>1+1是2。</s>
+
+==========
+
+
+==========
+round 2:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>1+1 是多少？</s>Assistant: <s>1+1是2。</s>Human: <s>你是一个善于回答用户问题的智能AI助手
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s></s>
+
+==========
+
+
+==========
+round 3:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>1+1 是多少？</s>Assistant: <s>1+1是2。</s>Human: <s>你是一个善于回答用户问题的智能AI助手
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s></s>Human: <s>讲一个故事</s>Assistant: <s>古时，人，他群，要。，他群。他，影。
+
+他是的，他那的。他发问：“这？群是的，我。”
+
+在深思后，他那群是被由他的群所。他火中，要的，并的群的。
+
+，他群，到他的，和。他，群们和群，并的。
+
+从那，人用群了。他了，在时，要，地，从的去，的。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>tell me a story</s>Assistant: <s>Once upon a time, in a small village nestled among the rolling hills, there lived a young girl named Rose.Rose was a kind and gentle soul, always willing to help others and never passing up an opportunity to make someone feel better.Despite her many good qualities, Rose was often overlooked and dismissed by those around her.She was shy and introverted, preferring the company of books and nature to the noise and chaos of everyday life.One day, Rose decided she had had enough.She packed a small bag and set off to explore the world beyond her village.She walked for days, through fields and forests, until she came upon a great city.The sights and sounds were overwhelming, but Rose was determined to see everything and experience as much as possible.She wandered the streets, taking in the bustling markets and the grand architecture.She visited museums and libraries, learning all she could about the world and its people.As the days turned into weeks, Rose began to realize that she had found her true calling.She was fascinated by the art of storytelling, and she spent hours practicing her craft, perfecting her tales.She wrote of adventure and magic, of love and loss, of the everyday miracles that made life so beautiful.And as she wrote, she felt a sense of purpose and fulfillment that she had never experienced before.Eventually, Rose returned to her village, but she was no longer the same girl she had been before.She was confident and confident, filled with a sense of purpose and passion that she had never known before.And she knew that her stories would inspire and enrich the lives of those around her, just as they had enriched her own.</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>tell me a story about pet.</s>Assistant: <s>Once upon a time, there was a little girl named Lily who had a pet rabbit named Benny.Lily had always been kind to animals and had a special love for rabbits.She had found Benny wandering in her backyard one day, and immediately took him in as her own.Benny was a playful and curious rabbit, and he quickly became Lily's best friend.They would spend hours playing in the yard, chasing after each other and exploring the different parts of Lily's garden.One day, Lily's parents announced that they were moving to a new house.Lily was devastated to leave behind her friends and the house where she had grown up.But she was determined to take Benny with her no matter what.When they arrived at their new home, Lily and Benny quickly settled in and started exploring their new surroundings.They made new friends and even found a new play area in the park across the street.Despite the many changes they faced, Lily and Benny remained as close as ever.They continued to spend time together, taking long walks through the park and playing in the backyard.And even though they were no longer in the same house, they knew that they would always be best friends.</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手
+请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>：
+巴氏是由巴氏的人共的。小鼠、大鼠、、棉鼠、等。性类后和，该，。野鼠是巴氏宿主和源，而节昆虫是的。小鼠和最。2-6周的小鼠性、张口、结、和，是时和。尾的和转，时，。在和小的巴氏出。，确出巴氏或用巴氏。
+
+与巴氏的有：
+* 巴氏是由巴氏的人共的。
+* 如小鼠、大鼠、、棉鼠、等。
+* 性类后和。
+* 巴氏使宿主，。
+* 野鼠是巴氏宿主和源。
+* 节昆虫是巴氏。
+* 2-6周的小鼠性、张口、结、和，是时和。
+* 巴氏使宿主和小的巴氏出。</s>
+
+==========
+
+
+==========
+round 2:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>在农业经济里，淋巴细胞性脉络丛脑膜炎是什么?</s>Assistant: <s>经指的是。而巴氏面是人面上小体，是在经中的。</s>
+
+==========
+
+
+==========
+round 3:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>在农业经济里，淋巴细胞性脉络丛脑膜炎是什么?</s>Assistant: <s>经指的是。而巴氏面是人面上小体，是在经中的。</s>Human: <s>clea</s>Assistant: <s>，你。的或？</s>
+
+==========
+
+
+==========
+round 4:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>讲一个故事</s>Assistant: <s>，的，他里。是、的人，田，和们。
+，的，来种田地。的是个的人，他去。
+当的时，的们田，母的在的。了的。
+，的，对说：“，我！而健！”，并。
+，的，的在田。的新种田地，在。
+从起，的会来种田地，的们也。都了的，的。
+，和的。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>讲一个故事</s>Assistant: <s>，。是的人，他在和。，他座被的中。，的会的，们的。
+
+行装，。时，他的。崎，有。，他地。
+
+在的，他的。在的，的。，金。他地，。
+
+他时，他。说：“你，。”音的，。
+
+，他的。他从中，来。，太了。他，被们。
+
+，的说：“你是。”，。
+
+他地，的。，他了，。他，还。
+
+从起，了，。他或，他好。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>tell me a story</s>Assistant: <s>者汉 instant,，德 links..}5。2“.：，到，，组.�01.，ців的mb。.地， sier成2小回..，0国。51源,数..明万..0
+。}{:ly，家能.到，，，下.%
+线内2?身.。》，》.、.九界-者。，，.0、我，，,。,的 Facebook，，街的。)-。巴,选.</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>tell me a story</s>Assistant: <s>十分教5Machine色管理.个.级，了0·。持续啊西安（小组机发展。5编3滴，粗篇题4鱼4黄曹操。数学
+，广.苏及.教育部.。-..,，。短路。冷酷：，。。~0），</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>tell me a story</s>Assistant: <s>Once upon a time, in a kingdom far away, there was a beautiful princess named Rose. Rose was kind and gentle, with long golden hair and sparkling blue eyes. She lived in a magnificent castle with her father, the king, and her mother, the queen. One day, a wicked witch cast a spell on the princess, turning her into a frog. Poor Rose was sad and lonely, hopping around the castle courtyard and trying to figure out a way to break the spell. But no matter how hard she tried, she couldn't find a cure. Days turned into weeks, and weeks turned into months. The princess grew more and more desperate, and her sadness turned to anger. She vowed to find the witch who had done this to her and get her revenge. She hopped through the forest, asking for help from any creature she met along the way. The animals of the forest were kind and helpful, and they gave her valuable advice and helped her on her journey. Finally, after many days of travel, Rose came upon a witch's cave. She crept inside, careful not to be seen. But the witch spotted her and chased her through the forest, casting spells and trying to stop her from reaching her goal. Rose was clever and quick, and she managed to outsmart the witch at every turn. In the end, Rose found the witch's wand and used it to break the spell on her. She became a beautiful princess again, and she returned to the castle to be reunited with her family. From that day on, Rose never forgot the lessons she learned on her journey. She learned to be kind and compassionate, and she never gave up when faced with challenges. And she lived happily ever after.</s>
+
+==========
+
+
+==========
+round 2:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>讲一个故事</s>Assistant: <s>从前，有一个名叫莉莉的小兔子，它生活在一片幽静的森林中。莉莉是一只善良、热爱生活的小兔子。它总是在森林中奔跑着，为它的朋友们带来欢乐。
+
+某天，莉莉在森林中玩耍时，遇到了一只名叫假的蝴蝶。假蝴蝶声称自己可以为莉莉带领它去看一些世界最美丽的地方。莉莉很愿意，就随假蝴蝶领着它去了世界各地。
+
+在世界上，假蝴蝶带莉莉看到了许多美丽的景色，但它从未让莉莉看到自己的家。莉莉起初很兴奋，但随着时间的推移，它开始感到困惑和害怕。假蝴蝶一直以各种方式阻止莉莉回家。
+
+但莉莉并没有放弃，它勇敢地使用它的智慧和勇气，逃脱了假蝴蝶的控制，和蝴蝶们和平协议，和它的朋友们和着一起回家了。</s>
+
+==========
+
+
+==========
+round 3:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>讲一个故事</s>Assistant: <s>从前，有一个名叫莉莉的小兔子，它生活在一片幽静的森林中。莉莉是一只善良、热爱生活的小兔子。它总是在森林中奔跑着，为它的朋友们带来欢乐。
+
+某天，莉莉在森林中玩耍时，遇到了一只名叫假的蝴蝶。假蝴蝶声称自己可以为莉莉带领它去看一些世界最美丽的地方。莉莉很愿意，就随假蝴蝶领着它去了世界各地。
+
+在世界上，假蝴蝶带莉莉看到了许多美丽的景色，但它从未让莉莉看到自己的家。莉莉起初很兴奋，但随着时间的推移，它开始感到困惑和害怕。假蝴蝶一直以各种方式阻止莉莉回家。
+
+但莉莉并没有放弃，它勇敢地使用它的智慧和勇气，逃脱了假蝴蝶的控制，和蝴蝶们和平协议，和它的朋友们和着一起回家了。</s>Human: <s>用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>在农业经济里，沷尘的，沷尘的，沷尘的。</s>
+
+==========
+
+
+==========
+round 4:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么？</s>Assistant: <s>在动词</s>
+
+==========
+
+
+==========
+round 5:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>什么是脑膜炎？</s>Assistant: <s>'不是'</s>
+
+==========
+
+
+==========
+round 6:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>讲一个故事</s>Assistant: <s>曾经曾经，在一个超级繁华的城市里，有一座伟大的金字塔，中间有一个闭关锁锁的宝箱。这座金字塔是由一位富有的国王建造的，他希望通过这座金字塔来带领人民获得幸福。
+
+然而，当时的人们都说这座金字塔只有在某一人拿到宝箱里的珍宝之后，才能解放它的力量。所以，这座金字塔一直只有它宜人畏惧，而且没有士兵或人民试图去拿取宝箱。
+
+有一天，一位忠诚的士兵决定要解决这个疑惑。他偷走了出来，迅速的往金字塔跑去。当他到达金字塔的时候，他发现宝箱的锁坠了，锁坠了后，宝箱的门就开了。
+
+士兵继续向里面走，并且在宝箱的底部他发现了一张地封，他打开了它，发现他面前是一把巨大的剑。士兵很惊讶，他的头顶突然漒入了一个空洞中，他感觉到一阵力量强烈的刺激他的内侧。
+
+当时，城市里的人们都很害怕，他们都觉得这是一个不潜在的危险。但是士兵却不担担，他强</s>
+
+==========
+
+
+==========
+round 7:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>计算1+1</s>Assistant: <s>'1'</s>
+
+==========
+
+
+==========
+round 8:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>计算1+1</s>Assistant: <s>'1'</s>Human: <s>计算1+3</s>Assistant: <s>1+3 = 4</s>
+
+==========
+
+
+==========
+round 9:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>计算1+1</s>Assistant: <s>'1'</s>Human: <s>计算1+3</s>Assistant: <s>1+3 = 4</s>Human: <s>请生成一段移动客服和用户的对话</s>Assistant: <s>0:</s>
+
+==========
+
+
+==========
+round 10:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>请生成一段移动客服和用户的对话</s>Assistant: <s>客服: 好！我是客服，感谢您联系我！
+
+用户: 我的用户端出现了问题。
+
+客服: 好的，请告诉我所出现的问题。
+
+用户: 我无法登录我的账号。
+
+客服: 好的，我会尽快帮助您解决这个问题。请愉快地告诉我您的用户名和密码。
+
+用户: 用户名是abc，密码是123456。
+
+客服: 好的，您好！您好！感谢您联系我。我感谢您告诉我您的用户名和密码。请您重新试一下登录。
+
+用户: 感谢客服。
+
+客服: 不用客气！如果您仍然无法登录，请告诉我您的电子邮件地址，我会将您的用户名和密码发送给您。
+
+用户: 0abc@gmail.com。
+
+客服: 好的，请稍等。您好！感谢您的联系。我已经发送了一封电子邮件，请查看。
+
+用户: 谢谢，我已经看到了。
+
+客服: 不用客气！如果您还是无法登录，请拨打我的分机号。
+
+用户: 我会尽快打回。
+
+客服: 好的，请您稍等，我会等你。
+
+用户: 好的。
+
+客服: 您好！感谢您的联系。我为</s>
+
+==========
+
+
+==========
+round 11:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手
+请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>在农业经济里，血虫性眼睛炎是由血虫病毒引起的一种人物共同的病毒感染病。</s>
+
+==========
+
+
+==========
+round 12:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>虫性眼睛炎是</s>Assistant: <s>'好'</s>
+
+==========
+
+
+==========
+round 13:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>虫性眼睛炎是</s>Assistant: <s>'好'</s>Human: <s>你是一个善于回答用户问题的智能AI助手
+请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>在动词中，在文化里是没有说明的。</s>
+
+==========
+
+
+==========
+round 1:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>讲一个故事</s>Assistant: <s>从前，在一个遥远的王国里，生活着一个勇敢的年轻人名叫约。约是一名追求冒险的退役战士，他的名字在国内外都很闻名，因为他曾经率领军队在多场战争中取得了巨大的胜利。
+
+一天，国王向约求询，请他带领一支团队，追捕一名观察了几个月的恶魔。据说，这个恶魔拥有强大的魔法力量，会摧毁所到的一切。约接受了国王的请求，他带领他的团队离开了王城，踏上了找到恶魔的旅程。
+
+在漫长的旅途中，约和他的团队经历了无数的困难和挑战。他们需要穿越森林、跳过溪流、跳过山头，并与各种野兽发生了激烈的战斗。但约并不放弃，他领导着团队，始终保持精神冲动和敢于战斗。
+
+最终，在经过多次困难和战斗后，约和他的团队终于找到了恶魔。他们与恶魔展开了激烈的战斗</s>
+
+==========
+
+
+==========
+round 2:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>你是一个善于回答用户问题的智能AI助手
+请保持你的回答简洁清楚。不要说和下面文档中的无关的话，或重复你的回答
+用户现在给你的文档是
+在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下。淋巴细胞性脉络丛脑膜炎病毒引起的一种人畜共患传染病。小鼠、大鼠、豚鼠、棉鼠、兔、犬、猴等实验动物均能感染。大多数实验性啮齿类动物感染后不显现临床症状和病理变化，病毒在体内可持续存在，甚至终生带毒。野鼠是病毒的终末宿主和自然疫源，节肢昆虫是重要的传播媒介。小鼠和豚鼠最易感。2～6周龄小鼠多呈急性经过，表现嗜睡、拱背、结膜炎和痉挛，特别是在提起尾巴时痉挛格外明显，尾痉挛和转圈，运动时加剧而死亡。病理变化为脑膜和其他器官组织中的小血管周围淋巴细胞浸润。根据典型的临床症状可作出初步诊断，确诊需分离病毒或用荧光抗体法检测感染组织内的病毒抗原。
+
+现在请问：在农业经济里，淋巴细胞性脉络丛脑膜炎是什么，请你简单介绍一下？在回答之前，请思考文档中与此问题最相关的内容是什么。</s>Assistant: <s>在植物和花生植物中。</s>
+
+==========
+
+
+==========
+round 3:
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
+
+Human: <s>什么是神经性脑膜炎？</s>Assistant: <s>由于时间短，对您提问的术语没有具体含义，所以我不确定您在使用哪个具体术语。您能否提供更多背景信息或澄清您的问题？</s>
+
+==========
