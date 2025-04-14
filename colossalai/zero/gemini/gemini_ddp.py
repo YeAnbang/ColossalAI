@@ -15,6 +15,7 @@ from colossalai.checkpoint_io.utils import StateDictSharder, gather_distributed_
 from colossalai.interface import ModelWrapper
 from colossalai.lazy import LazyTensor
 from colossalai.logging import get_dist_logger
+from colossalai.quantization.fp8_hook import FP8Hook
 from colossalai.tensor.colo_parameter import ColoParameter
 from colossalai.tensor.d_tensor import (
     distribute_tensor,
@@ -34,7 +35,7 @@ from colossalai.tensor.padded_tensor import (
     to_unpadded_tensor,
 )
 from colossalai.tensor.param_op_hook import ColoParamOpHookManager
-from colossalai.utils import _cast_float, free_storage, is_ddp_ignored
+from colossalai.utils import _cast_float, free_storage, get_non_persistent_buffers_set, is_ddp_ignored
 
 from .chunk import Chunk, ChunkManager, TensorState, init_chunk_manager
 from .gemini_hook import GeminiZeROHook
@@ -98,6 +99,8 @@ class GeminiDDP(ModelWrapper):
         extra_dp_group: Optional[ProcessGroup] = None,
         verbose: bool = False,
         enable_async_reduce: bool = True,
+        fp8_communication: bool = False,
+        use_fp8: bool = False,
     ) -> None:
         assert mixed_precision in (torch.float16, torch.bfloat16)
         reuse_fp16_chunk = master_weights if not enable_gradient_accumulation else False
@@ -122,6 +125,8 @@ class GeminiDDP(ModelWrapper):
                 verbose=verbose,
                 max_prefetch=max_prefetch,
             )
+        if fp8_communication:
+            self.chunk_manager.fp8_communication = True
         self.gemini_manager = GeminiManager(
             placement_policy,
             self.chunk_manager,
@@ -135,6 +140,9 @@ class GeminiDDP(ModelWrapper):
         )
         self.force_outputs_fp32 = force_outputs_fp32
         self.param_op_hook = GeminiZeROHook(self.gemini_manager)
+        self.hooks = [self.param_op_hook]
+        if use_fp8:
+            self.hooks.append(FP8Hook())
         self.fp32_params: List[torch.Tensor] = list()
         self.fp16_params: List[ColoParameter] = list()
         self.grads_device: Dict[torch.Tensor, torch.device] = dict()
@@ -149,7 +157,7 @@ class GeminiDDP(ModelWrapper):
         self.enable_async_reduce = enable_async_reduce
 
         if enable_async_reduce:
-            self.async_reduce_stream = torch.cuda.Stream()
+            self.async_reduce_stream = get_accelerator().Stream()
         else:
             self.async_reduce_stream = None
 
@@ -179,7 +187,7 @@ class GeminiDDP(ModelWrapper):
             pin_memory=pin_memory,
         )
         super().__init__(module)
-        self._non_persistent_buffers_set = self._get_non_persistent_buffers_set(module)
+        self._non_persistent_buffers_set = get_non_persistent_buffers_set(module)
         self._cast_buffers()
 
         # register grad hook
@@ -249,36 +257,6 @@ class GeminiDDP(ModelWrapper):
         for p in params_to_ignore:
             p._ddp_to_ignore = True
 
-    def _get_non_persistent_buffers_set(
-        self, module, memo: Optional[Set[nn.Module]] = None, prefix: str = "", remove_duplicate: bool = True
-    ):
-        r"""
-        Args:
-            memo: a memo to store the set of modules already added to the result
-            prefix: a prefix that will be added to the name of the module
-            remove_duplicate: whether to remove the duplicated module instances in the result
-                or not
-        """
-
-        if memo is None:
-            memo = set()
-        self_non_persistent_set = set()
-        if module not in memo:
-            if remove_duplicate:
-                memo.add(module)
-            self_non_persistent_set = set(
-                map(lambda key: prefix + ("." if prefix else "") + key, module._non_persistent_buffers_set)
-            )
-            for name, sub_module in module._modules.items():
-                if sub_module is None:
-                    continue
-                submodule_prefix = prefix + ("." if prefix else "") + name
-                child_non_persistent_set = self._get_non_persistent_buffers_set(
-                    sub_module, memo, submodule_prefix, remove_duplicate
-                )
-                self_non_persistent_set = set.union(self_non_persistent_set, child_non_persistent_set)
-        return self_non_persistent_set
-
     def _post_forward(self):
         """This function is only triggered for inference."""
         access_list = list(self.chunk_manager.accessed_chunks)
@@ -307,7 +285,7 @@ class GeminiDDP(ModelWrapper):
             outputs = self._inference_forward(*args, **kwargs)
         else:
             self.gemini_manager.pre_iter(*args)
-            with ColoParamOpHookManager.use_hooks(self.param_op_hook):
+            with ColoParamOpHookManager.use_hooks(*self.hooks):
                 outputs = self.module(*args, **kwargs)
 
         if self.force_outputs_fp32:
@@ -316,7 +294,7 @@ class GeminiDDP(ModelWrapper):
 
     def _inference_forward(self, *args, **kwargs):
         """This function is only triggered for inference."""
-        fwd_ctx = ColoParamOpHookManager.use_hooks(self.param_op_hook)
+        fwd_ctx = ColoParamOpHookManager.use_hooks(*self.hooks)
         if not self.scatter_after_inference:
             # gather all chunks
             for chunk in self.chunk_manager.get_chunks(self.fp16_params):
@@ -369,11 +347,11 @@ class GeminiDDP(ModelWrapper):
 
     def backward(self, loss: torch.Tensor):
         self._pre_backward()
-        with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(self.param_op_hook):
+        with self.param_op_hook.switch_to_backward(), ColoParamOpHookManager.use_hooks(*self.hooks):
             loss.backward()
         self._post_backward()
 
-    def backward_by_grad(self, tensor, grad):
+    def backward_by_grad(self, tensor, grad, inputs: torch.Tensor = None, retain_graph: bool = False):
         raise RuntimeError("Gemini is not compatible with pipeline. backward_by_grad shoudn't be called in Gemini.")
 
     @staticmethod
@@ -385,7 +363,7 @@ class GeminiDDP(ModelWrapper):
         master_weights: bool,
         enable_gradient_accumulation: bool,
         p: nn.Parameter,
-        async_reduce_stream: Optional[torch.cuda.Stream] = None,
+        async_reduce_stream=None,
     ):
         async_reduce_scatter = async_reduce_stream is not None
         setattr(p, "_gemini_reduced", True)
@@ -424,9 +402,9 @@ class GeminiDDP(ModelWrapper):
                 grad_chunk.add_tensor_to_chunk_slice(p, grad)
 
             if async_reduce_stream is not None:
-                async_reduce_stream.wait_stream(torch.cuda.current_stream())
+                async_reduce_stream.wait_stream(get_accelerator().current_stream())
 
-            with torch.cuda.stream(async_reduce_stream):
+            with get_accelerator().stream(async_reduce_stream):
                 reduced = chunk_manager.reduce_chunk(grad_chunk, async_op=async_reduce_scatter)
                 if reduced:
                     grad_chunk.wait_async_reduce()
@@ -925,6 +903,7 @@ class GeminiDDP(ModelWrapper):
         keep_vars: bool = False,
         max_shard_size: int = 1024,
         only_rank_0: bool = True,
+        pinned_state_dicts: Optional[Dict[str, torch.Tensor]] = None,
     ) -> Iterator[Tuple[OrderedDict, int]]:
         """Returns dictionaries containing a whole state of the module one by one. The max size of dictionary shard is specified by ``max_shard_size``.
 
@@ -965,6 +944,13 @@ class GeminiDDP(ModelWrapper):
                         gathered_param_buffer.update(self._get_chunk_to_save_data(chunk, only_rank_0))
                     gathered_param = gathered_param_buffer.pop(param_to_save)
 
+                if pinned_state_dicts is not None:
+                    if (prefix + name) not in pinned_state_dicts:
+                        pinned_state_dicts[prefix + name] = torch.empty_like(
+                            gathered_param, pin_memory=True, device="cpu"
+                        )
+                    pinned_state_dicts[prefix + name].copy_(gathered_param)
+                    gathered_param = pinned_state_dicts[prefix + name]
                 block, block_size = sharder.append_param(prefix + name, gathered_param)
                 if block is not None:
                     yield block, block_size
@@ -976,6 +962,11 @@ class GeminiDDP(ModelWrapper):
         for name, buf in self.named_buffers():
             if buf is not None and name not in self._non_persistent_buffers_set:
                 buffer = buf if keep_vars else buf.detach()
+                if pinned_state_dicts is not None:
+                    if (prefix + name) not in pinned_state_dicts:
+                        pinned_state_dicts[prefix + name] = torch.empty_like(buffer, pin_memory=True, device="cpu")
+                    pinned_state_dicts[prefix + name].copy_(buffer)
+                    buffer = pinned_state_dicts[prefix + name]
                 block, block_size = sharder.append_param(prefix + name, buffer)
                 if block is not None:
                     yield block, block_size
@@ -986,6 +977,11 @@ class GeminiDDP(ModelWrapper):
             is not torch.nn.Module.get_extra_state
         ):
             extra_state = self.get_extra_state()
+            if pinned_state_dicts is not None:
+                if extra_state_key not in pinned_state_dicts:
+                    pinned_state_dicts[extra_state_key] = torch.empty_like(extra_state, pin_memory=True, device="cpu")
+                pinned_state_dicts[extra_state_key].copy_(extra_state)
+                extra_state = pinned_state_dicts[extra_state_key]
             block, block_size = sharder.append_param(extra_state_key, extra_state)
             if block is not None:
                 yield block, block_size

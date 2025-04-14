@@ -7,6 +7,7 @@ from torch.testing import assert_close
 
 import colossalai
 from colossalai.logging import disable_existing_loggers
+from colossalai.pipeline.schedule.v_schedule import PipelineGraph
 from colossalai.shardformer import PipelineGradientCheckpointConfig
 from colossalai.shardformer.layer.utils import Randomizer
 from colossalai.tensor.d_tensor.api import clear_layout_converter
@@ -33,7 +34,7 @@ def check_forward_backward(model_fn, data_gen_fn, output_transform_fn, loss_fn, 
     )
     if enable_gradient_checkpointing:
         # org_model.gradient_checkpointing_enable()
-        sharded_model.unwrap().gradient_checkpointing_enable()
+        sharded_model.unwrap().gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
     org_loss, org_output, sharded_loss, sharded_output = run_forward_backward_with_hybrid_plugin(
         org_model, sharded_model, sharded_optimizer, data_gen_fn, output_transform_fn, criterion, booster
@@ -63,7 +64,9 @@ def check_forward_backward(model_fn, data_gen_fn, output_transform_fn, loss_fn, 
         and booster.plugin.shard_config.sequence_parallelism_mode == "all_to_all"
     ):
         master2working = sharded_optimizer.get_master_to_working_map()
-        for p1, p2 in zip(llama_model.parameters(), sharded_optimizer._master_param_groups_of_current_rank[0]):
+        for (name, p1), p2 in zip(
+            llama_model.named_parameters(), sharded_optimizer._master_param_groups_of_current_rank[0]
+        ):
             working_p = master2working[id(p2)]
             grads = sharded_optimizer.get_partitioned_gradients_by_param_id(0, id(working_p))
             grad_index = (
@@ -73,7 +76,10 @@ def check_forward_backward(model_fn, data_gen_fn, output_transform_fn, loss_fn, 
             )
             grad = grads[grad_index]
             sharded_grad = p1.grad.view(-1).chunk(dist.get_world_size())[dist.get_rank()]
-            assert_close(sharded_grad, grad[: sharded_grad.shape[0]], atol=5e-3, rtol=5e-3, check_dtype=False)
+            try:
+                assert_close(sharded_grad, grad[: sharded_grad.shape[0]], atol=5e-3, rtol=5e-3, check_dtype=False)
+            except Exception as e:
+                raise RuntimeError(f"Failed to check grad for {name}") from e
 
     # Save gradient tensors for comparison between the original model and the sharded model before optimizer step.
     grads_to_check = {}
@@ -107,93 +113,128 @@ def check_forward_backward(model_fn, data_gen_fn, output_transform_fn, loss_fn, 
     sharded_optimizer.step()
 
     # check last hidden state & loss
-    if stage_manager is None or stage_manager.is_last_stage(ignore_chunk=True):
+    check_flag = False
+    if (
+        (stage_manager is None)
+        or (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True))
+        or (not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True))
+    ):
+        check_flag = True
+    if check_flag:
         if test_config["precision"] == "fp32":
             atol, rtol = 1e-5, 1e-3
         else:
             atol, rtol = 5e-3, 5e-3
-
         if org_model.__class__.__name__ == "LlamaModel":
-            check_output_hidden_state(org_output, sharded_output, stage_manager, atol=atol, rtol=rtol)
-
+            check_output_hidden_state(
+                org_output,
+                sharded_output,
+                stage_manager,
+                atol=atol,
+                rtol=rtol,
+                shard_config=booster.plugin.shard_config,
+            )
         check_loss(org_loss, sharded_loss, atol=atol, rtol=rtol)
-
     # check weights
     if stage_manager is None or stage_manager.is_first_stage(ignore_chunk=True):
         if test_config["precision"] == "fp32":
             atol, rtol = 1e-4, 1e-3
         else:
             atol, rtol = 5e-3, 5e-3
-        try:
-            check_weight(
-                llama_model,
-                shard_llama_model,
-                col_layer_for_check,
-                tp_group,
-                atol=atol,
-                rtol=rtol,
-                dim=1,
-                verbose=False,
-            )
-        except Exception as e:
-            print(f"Failed config: {test_config}")
-            raise e
+        check_weight(
+            llama_model,
+            shard_llama_model,
+            col_layer_for_check,
+            tp_group,
+            atol=atol,
+            rtol=rtol,
+            dim=1,
+            verbose=False,
+        )
 
     # check grads
     check_all_grad_tensors(grads_to_check)
-
     torch.cuda.empty_cache()
 
 
 @parameterize(
     "test_config",
     [
-        {  # Ulysess + Flash attention
+        # Double Ring Attention
+        {
+            "tp_size": 1,
+            "pp_size": 1,
+            "sp_size": 4,
+            "num_microbatches": 1,
+            "enable_sequence_parallelism": True,
+            "sequence_parallelism_mode": "ring_attn",
+            "use_lazy_init": True,
+            "zero_stage": 0,
+            "precision": "fp16",
+            "initial_scale": 1,
+        },
+        # Ring Attention + PP
+        {
+            "tp_size": 1,
+            "pp_size": 2,
+            "sp_size": 2,
+            "num_microbatches": 2,
+            "enable_sequence_parallelism": True,
+            "sequence_parallelism_mode": "ring_attn",
+            "use_lazy_init": True,
+            "zero_stage": 1,
+            "precision": "fp16",
+            "initial_scale": 1,
+        },
+        # Ring Attention + TP
+        {
+            "tp_size": 2,
+            "pp_size": 1,
+            "sp_size": 2,
+            "num_microbatches": 1,
+            "enable_sequence_parallelism": True,
+            "sequence_parallelism_mode": "ring_attn",
+            "use_lazy_init": True,
+            "zero_stage": 2,
+            "precision": "fp16",
+            "initial_scale": 1,
+        },
+        {  # Ulysess + TP
+            "tp_size": 2,
+            "pp_size": 1,
+            "sp_size": 2,
+            "num_microbatches": 1,
+            "enable_sequence_parallelism": True,
+            "sequence_parallelism_mode": "all_to_all",
+            "enable_all_optimization": True,
+            "use_lazy_init": True,
+            "zero_stage": 0,
+            "precision": "fp16",
+            "initial_scale": 1,
+        },
+        {  # Ulysess + PP
             "tp_size": 1,
             "pp_size": 2,
             "sp_size": 2,
             "num_microbatches": 2,
             "enable_sequence_parallelism": True,
             "sequence_parallelism_mode": "all_to_all",
-            "enable_flash_attention": True,
-            "use_lazy_init": True,
-            "zero_stage": 0,
-            "precision": "fp16",
-            "initial_scale": 1,
-        },
-        {  # Test ring + Flash attention
-            "tp_size": 2,
-            "pp_size": 1,
-            "sp_size": 2,
-            "num_microbatches": 1,
-            "enable_sequence_parallelism": True,
-            "sequence_parallelism_mode": "ring",
-            "enable_flash_attention": True,
-            "use_lazy_init": True,
-            "zero_stage": 2,
-            "precision": "fp16",
-            "initial_scale": 1,
-        },
-        {
-            "tp_size": 1,
-            "pp_size": 1,
-            "sp_size": 2,
-            "num_microbatches": 1,
-            "enable_sequence_parallelism": True,
-            "sequence_parallelism_mode": "all_to_all",
+            "enable_all_optimization": True,
             "use_lazy_init": True,
             "zero_stage": 1,
             "precision": "fp16",
             "initial_scale": 1,
         },
         {
-            "tp_size": 4,
+            "tp_size": 2,
             "pp_size": 1,
+            "sp_size": 1,
             "num_microbatches": 1,
             "enable_sequence_parallelism": True,
-            "sequence_parallelism_mode": "split_gather",
-            "enable_flash_attention": False,
+            "sequence_parallelism_mode": "ring",
+            "enable_flash_attention": True,
             "use_lazy_init": True,
+            "zero_stage": 2,
             "precision": "fp16",
             "initial_scale": 1,
         },
@@ -240,13 +281,31 @@ def check_forward_backward(model_fn, data_gen_fn, output_transform_fn, loss_fn, 
 )
 def run_llama_test(test_config):
     sub_model_zoo = model_zoo.get_sub_registry("transformers_llama")
-
+    if test_config.get("pp_style", None) == "zbv":
+        mem_f = 34 * 32 + 5 * 4 * 16
+        mem_w = -32 * 32
+        mem_b = -mem_w - mem_f
+        scheduler_nodes = PipelineGraph(
+            n_stage=test_config["pp_size"],
+            n_micro=test_config["num_microbatches"],
+            f_cost=1000,
+            b_cost=1000,
+            w_cost=1000,
+            c_cost=1,
+            f_mem=mem_f,
+            b_mem=mem_b,
+            w_mem=mem_w,
+        ).get_v_schedule()
+        test_config["scheduler_nodes"] = scheduler_nodes
     for name, (model_fn, data_gen_fn, output_transform_fn, loss_fn, _) in sub_model_zoo.items():
+        if test_config.get("sequence_parallelism_mode", None) == "ring_attn" and "causal" not in name:
+            continue
         try:
             check_forward_backward(model_fn, data_gen_fn, output_transform_fn, loss_fn, test_config)
         except Exception as e:
-            print(f"Failed config: {test_config}")
+            print(f"Failed config: {test_config}, model name: {name}")
             raise e
+
     clear_layout_converter()
     Randomizer.reset_index()
     torch.cuda.empty_cache()

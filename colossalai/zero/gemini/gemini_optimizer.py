@@ -1,8 +1,7 @@
 # this code is inspired by the DeepSpeed library and implemented with our own design from scratch
 import copy
 import math
-import warnings
-from typing import Any, Dict, Iterator, OrderedDict, Set, Tuple, Union
+from typing import Any, Dict, Iterator, Optional, OrderedDict, Set, Tuple, Union
 
 import torch
 import torch.distributed as dist
@@ -136,7 +135,7 @@ class GeminiOptimizer(OptimizerWrapper):
         self.tp_rank = dist.get_rank(tp_group) if tp_group is not None else 0
         self.verbose = verbose
         self.param_groups_backup = list()
-
+        self.logger = get_dist_logger()
         # Mapping from integer id to real/fake param tensor, used for checkpointing.
         self.id_to_real_params: Dict[int, Parameter] = dict()
         self.id_to_fake_params: Dict[int, Parameter] = dict()
@@ -148,9 +147,10 @@ class GeminiOptimizer(OptimizerWrapper):
         for name, param in module.named_parameters():
             if is_ddp_ignored(param):
                 if param.requires_grad:
-                    warnings.warn(
+                    self.logger.warning(
                         f"Parameter `{name}` is ignored by DDP but requires gradient! "
-                        "You should handle its optimizer update by yourself!"
+                        "You should handle its optimizer update by yourself!",
+                        ranks=[0],
                     )
             else:
                 ddp_param_list.append(param)
@@ -195,6 +195,7 @@ class GeminiOptimizer(OptimizerWrapper):
             self._logger.warning(f'gpu_margin_mem_ratio is meaningless when placement_policy is not "auto"', ranks=[0])
 
         self._register_states = disposable(self._register_states_)
+        self._current_grad_norm: Optional[float] = None
 
     def _set_grad_ptr(self):
         for group in self.param_groups:
@@ -255,6 +256,7 @@ class GeminiOptimizer(OptimizerWrapper):
 
         if self.clipping_flag:
             total_norm = self._calc_global_norm()
+            self._current_grad_norm = total_norm
             clip = ((total_norm / div_scale) + 1e-6) / self.max_norm
             if clip > 1:
                 div_scale = clip * div_scale
@@ -298,12 +300,14 @@ class GeminiOptimizer(OptimizerWrapper):
         loss = self.mix_precision_mixin.pre_backward(loss)
         self.module.backward(loss)
 
-    def backward_by_grad(self, tensor: torch.Tensor, grad: torch.Tensor):
+    def backward_by_grad(
+        self, tensor: torch.Tensor, grad: torch.Tensor, inputs: torch.Tensor = None, retain_graph: bool = False
+    ):
         # This function is called except the last stage of pipeline parallel
         # It receives the scaled grad from the previous rank
         # No need to scale the grad again
         # Need to unscale when optimizing
-        grad = self.mix_precision_mixin.pre_backward_by_grad(grad)
+        grad = self.mix_precision_mixin.pre_backward_by_grad(grad, inputs=inputs, retain_graph=retain_graph)
         self.module.backward_by_grad(tensor, grad)
 
     def _maybe_move_fp32_params(self):
@@ -805,7 +809,11 @@ class GeminiOptimizer(OptimizerWrapper):
         self.optimizer_loading_epilogue()
 
     def state_shard(
-        self, prefix: str = "", max_shard_size: int = 1024, only_rank_0: bool = True
+        self,
+        prefix: str = "",
+        max_shard_size: int = 1024,
+        only_rank_0: bool = True,
+        pinned_state_dicts: Optional[Dict[int, Dict[str, torch.Tensor]]] = None,
     ) -> Iterator[Tuple[OrderedDict, int]]:
         """Returns dictionaries containing shards of optimizer states one by one.
            The max size of each dictionary shard is specified by ``max_shard_size``.
@@ -825,6 +833,16 @@ class GeminiOptimizer(OptimizerWrapper):
             dist.barrier()
             state = self.collect_states(param_id=param_id, only_rank_0=only_rank_0)
 
+            if pinned_state_dicts is not None:
+                if param_id not in pinned_state_dicts:
+                    pinned_state_dicts[param_id] = {}
+                for k, v in state.items():
+                    if v is None:
+                        continue
+                    if k not in pinned_state_dicts[param_id]:
+                        pinned_state_dicts[param_id][k] = torch.empty_like(v, pin_memory=True, device="cpu")
+                    pinned_state_dicts[param_id][k].copy_(v)
+                    state[k] = pinned_state_dicts[param_id][k]
             block, block_size = sharder.append_optim_state(param_id, state)
             if block is not None:
                 yield block, block_size
@@ -842,7 +860,12 @@ class GeminiOptimizer(OptimizerWrapper):
         *args,
         **kwargs,
     ) -> torch.Tensor:
-        warnings.warn(f"Gemini controls grad clipping by itself, so you should not use clip_grad_by_norm")
+        self.logger.warning(
+            f"Gemini controls grad clipping by itself, so you should not use clip_grad_by_norm", ranks=[0]
+        )
+
+    def get_grad_norm(self, norm_type=2, **kwargs):
+        return self._current_grad_norm
 
 
 class GeminiAdamOptimizer(GeminiOptimizer):

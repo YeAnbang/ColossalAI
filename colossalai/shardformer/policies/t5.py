@@ -13,6 +13,7 @@ from colossalai.shardformer.layer import (
     FusedRMSNorm,
     Linear1D_Col,
     Linear1D_Row,
+    LinearWithGradAccum,
     PaddingEmbedding,
     PaddingLMHead,
     RMSNorm,
@@ -77,6 +78,8 @@ class T5BasePolicy(Policy):
             self.shard_config.enable_sequence_parallelism = False
             warnings.warn("T5 doesn't support sequence parallelism now, will ignore the sequence parallelism flag.")
 
+        use_zbv = self.pipeline_stage_manager is not None and self.pipeline_stage_manager.use_zbv
+
         if self.shard_config.enable_tensor_parallelism:
             assert (
                 self.model.config.num_heads % self.shard_config.tensor_parallel_size == 0
@@ -117,23 +120,42 @@ class T5BasePolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="q",
                         target_module=Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="k",
                         target_module=Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="v",
                         target_module=Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="o",
                         target_module=Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="relative_attention_bias",
                         target_module=Embedding1D,
-                        kwargs=dict(gather_output=False),
+                        kwargs=dict(
+                            gather_output=False,
+                            fp8_communication=self.shard_config.fp8_communication,
+                        ),
                         ignore_if_not_exist=True,
                     ),
                 ],
@@ -151,13 +173,27 @@ class T5BasePolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="wi_0 ",
                         target_module=Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="wi_1",
                         target_module=Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
-                        suffix="wo", target_module=Linear1D_Col, kwargs=dict(gather_output=True)
+                        suffix="wo",
+                        target_module=Linear1D_Col,
+                        kwargs=dict(
+                            gather_output=True,
+                            fp8_communication=self.shard_config.fp8_communication,
+                            use_zbv=use_zbv,
+                        ),
                     ),
                     SubModuleReplacementDescription(
                         suffix="dropout",
@@ -170,10 +206,18 @@ class T5BasePolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="wi",
                         target_module=Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="wo",
                         target_module=Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="dropout",
@@ -181,13 +225,154 @@ class T5BasePolicy(Policy):
                     ),
                 ]
             )
-
+        elif use_zbv:
+            policy[T5Stack] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=DropoutForParallelInput,
+                    ),
+                ]
+            )
+            policy[T5LayerSelfAttention] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=DropoutForParallelInput,
+                    ),
+                ]
+            )
+            policy[T5LayerCrossAttention] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=DropoutForParallelInput,
+                    )
+                ]
+            )
+            policy[T5Attention] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="q",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="k",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="v",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="o",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="relative_attention_bias",
+                        target_module=Embedding1D,
+                        kwargs=dict(
+                            gather_output=False,
+                            fp8_communication=self.shard_config.fp8_communication,
+                        ),
+                        ignore_if_not_exist=True,
+                    ),
+                ],
+            )
+            policy[T5LayerFF] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=DropoutForParallelInput,
+                    ),
+                ]
+            )
+            policy[T5DenseGatedActDense] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="wi_0 ",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="wi_1",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="wo",
+                        target_module=LinearWithGradAccum,
+                        kwargs=dict(
+                            gather_output=True,
+                            fp8_communication=self.shard_config.fp8_communication,
+                            use_zbv=use_zbv,
+                        ),
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=DropoutForParallelInput,
+                    ),
+                ]
+            )
+            policy[T5DenseActDense] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="wi",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="wo",
+                        target_module=LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=DropoutForParallelInput,
+                    ),
+                ]
+            )
         if embedding_cls is not None:
             self.append_or_create_submodule_replacement(
                 description=SubModuleReplacementDescription(
                     suffix="embed_tokens",
                     target_module=embedding_cls,
-                    kwargs={"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by},
+                    kwargs=(
+                        {
+                            "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                        }
+                        if self.shard_config.enable_tensor_parallelism
+                        else {"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by}
+                    ),
                 ),
                 policy=policy,
                 target_key=T5Stack,
@@ -330,30 +515,61 @@ class T5BasePolicy(Policy):
         num_decoder_layers = len(decoder.block) if decoder else 0
 
         held_layers = []
-        layers_per_stage, decoder_starting_stage = self.distribute_t5_layers(
-            num_encoder_layers, num_decoder_layers, stage_manager.num_stages
-        )
-        start_idx, end_idx = self.get_t5_stage_index(layers_per_stage, stage_manager.stage, decoder_starting_stage)
-
-        if stage_manager.stage < decoder_starting_stage:
-            # current stage is in t5's encoder
-            if stage_manager.is_first_stage():
-                held_layers.append(model.shared)
-                held_layers.append(encoder.embed_tokens)
-                held_layers.append(encoder.dropout)
-            if stage_manager.stage == decoder_starting_stage - 1:
-                held_layers.append(encoder.final_layer_norm)
-                held_layers.append(encoder.dropout)
-            held_layers.extend(encoder.block[start_idx:end_idx])
+        if stage_manager.is_interleave:
+            layers_per_stage, decoder_starting_stage = self.distribute_t5_layers(
+                num_encoder_layers, num_decoder_layers, stage_manager.num_stages
+            )
+            stage_indices = self.get_t5_stage_index(layers_per_stage, stage_manager.stage, decoder_starting_stage)
+            if stage_manager.stage < decoder_starting_stage:
+                # current stage is in t5's encoder
+                if stage_manager.is_first_stage():
+                    held_layers.append(model.shared)
+                    held_layers.append(encoder.embed_tokens)
+                    held_layers.append(encoder.dropout)
+                if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                    not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+                ):
+                    held_layers.append(encoder.final_layer_norm)
+                    held_layers.append(encoder.dropout)
+                for start_idx, end_idx in stage_indices:
+                    held_layers.extend(encoder.block[start_idx:end_idx])
+            else:
+                # current stage is in t5's decoder
+                if stage_manager.stage == decoder_starting_stage:
+                    held_layers.append(decoder.embed_tokens)
+                    held_layers.append(decoder.dropout)
+                if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                    not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+                ):
+                    held_layers.append(decoder.final_layer_norm)
+                    held_layers.append(decoder.dropout)
+                for start_idx, end_idx in stage_indices:
+                    held_layers.extend(decoder.block[start_idx:end_idx])
         else:
-            # current stage is in t5's decoder
-            if stage_manager.stage == decoder_starting_stage:
-                held_layers.append(decoder.embed_tokens)
-                held_layers.append(decoder.dropout)
-            if stage_manager.is_last_stage():
-                held_layers.append(decoder.final_layer_norm)
-                held_layers.append(decoder.dropout)
-            held_layers.extend(decoder.block[start_idx:end_idx])
+            layers_per_stage, decoder_starting_stage = self.distribute_t5_layers(
+                num_encoder_layers, num_decoder_layers, stage_manager.num_stages
+            )
+            start_idx, end_idx = self.get_t5_stage_index(layers_per_stage, stage_manager.stage, decoder_starting_stage)
+
+            if stage_manager.stage < decoder_starting_stage:
+                # current stage is in t5's encoder
+                if stage_manager.is_first_stage():
+                    held_layers.append(model.shared)
+                    held_layers.append(encoder.embed_tokens)
+                    held_layers.append(encoder.dropout)
+                if stage_manager.stage == decoder_starting_stage - 1:
+                    held_layers.append(encoder.final_layer_norm)
+                    held_layers.append(encoder.dropout)
+                held_layers.extend(encoder.block[start_idx:end_idx])
+            else:
+                # current stage is in t5's decoder
+                if stage_manager.stage == decoder_starting_stage:
+                    held_layers.append(decoder.embed_tokens)
+                    held_layers.append(decoder.dropout)
+                if stage_manager.is_last_stage():
+                    held_layers.append(decoder.final_layer_norm)
+                    held_layers.append(decoder.dropout)
+                held_layers.extend(decoder.block[start_idx:end_idx])
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
@@ -407,7 +623,14 @@ class T5ModelPolicy(T5BasePolicy):
                 description=SubModuleReplacementDescription(
                     suffix="shared",
                     target_module=embedding_cls,
-                    kwargs={"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by},
+                    kwargs=(
+                        {
+                            "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                        }
+                        if self.shard_config.enable_tensor_parallelism
+                        else {"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by}
+                    ),
                 ),
                 policy=policy,
                 target_key=T5Model,
@@ -451,7 +674,14 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
                 description=SubModuleReplacementDescription(
                     suffix="shared",
                     target_module=embedding_cls,
-                    kwargs={"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by},
+                    kwargs=(
+                        {
+                            "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                        }
+                        if self.shard_config.enable_tensor_parallelism
+                        else {"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by}
+                    ),
                 ),
                 policy=policy,
                 target_key=T5ForConditionalGeneration,
@@ -465,6 +695,7 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
                     kwargs={
                         "gather_output": True,
                         "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                        "fp8_communication": self.shard_config.fp8_communication,
                     },
                 ),
                 policy=policy,
@@ -491,8 +722,15 @@ class T5ForConditionalGenerationPolicy(T5BasePolicy):
 
     def get_held_layers(self) -> List[nn.Module]:
         held_layers = super().get_held_layers()
-        if self.pipeline_stage_manager.is_last_stage():
-            held_layers.append(self.model.lm_head)
+        stage_manager = self.pipeline_stage_manager
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.lm_head)
+        else:
+            if stage_manager.is_last_stage():
+                held_layers.append(self.model.lm_head)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -539,7 +777,14 @@ class T5EncoderPolicy(T5BasePolicy):
                 description=SubModuleReplacementDescription(
                     suffix="shared",
                     target_module=embedding_cls,
-                    kwargs={"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by},
+                    kwargs=(
+                        {
+                            "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                        }
+                        if self.shard_config.enable_tensor_parallelism
+                        else {"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by}
+                    ),
                 ),
                 policy=policy,
                 target_key=T5EncoderModel,
@@ -591,9 +836,16 @@ class T5ForTokenClassificationPolicy(T5EncoderPolicy):
         """
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
-        if stage_manager.is_last_stage(ignore_chunk=True):
-            held_layers.append(self.model.dropout)
-            held_layers.append(self.model.classifier)
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.dropout)
+                held_layers.append(self.model.classifier)
+        else:
+            if stage_manager.is_last_stage(ignore_chunk=True):
+                held_layers.append(self.model.dropout)
+                held_layers.append(self.model.classifier)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

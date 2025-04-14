@@ -3,13 +3,13 @@ PPO trainer
 """
 
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import torch
 import wandb
 from coati.experience_buffer import NaiveExperienceBuffer
 from coati.experience_maker import Experience, NaiveExperienceMaker
-from coati.models import Critic, RewardModel
+from coati.models import Critic, RewardModel, RLVRRewardModel
 from coati.models.loss import GPTLMLoss, PolicyLoss, ValueLoss
 from coati.models.utils import calc_action_log_probs
 from coati.trainer.callbacks import Callback
@@ -84,7 +84,7 @@ class PPOTrainer(OLTrainer):
         critic_booster: Booster,
         actor: PreTrainedModel,
         critic: Critic,
-        reward_model: RewardModel,
+        reward_model: Union[RewardModel, RLVRRewardModel],
         initial_model: PreTrainedModel,
         actor_optim: Optimizer,
         critic_optim: Optimizer,
@@ -102,6 +102,7 @@ class PPOTrainer(OLTrainer):
         sample_buffer: bool = False,
         dataloader_pin_memory: bool = True,
         offload_inference_models: bool = True,
+        apply_loss_mask: bool = True,
         accumulation_steps: int = 1,
         save_interval: int = 0,
         save_dir: str = None,
@@ -140,6 +141,7 @@ class PPOTrainer(OLTrainer):
         self.actor_optim = actor_optim
         self.critic_optim = critic_optim
         self.save_interval = save_interval
+        self.apply_loss_mask = apply_loss_mask
         self.coordinator = coordinator
         self.actor_save_dir = os.path.join(save_dir, "actor")
         self.critic_save_dir = os.path.join(save_dir, "critic")
@@ -208,6 +210,7 @@ class PPOTrainer(OLTrainer):
         return self.experience_maker.make_experience(
             input_ids=prompts["input_ids"].to(get_current_device()),
             attention_mask=prompts["attention_mask"].to(get_current_device()),
+            gt_answer=prompts["gt_answer"],
             **self.generate_kwargs,
         )
 
@@ -217,7 +220,6 @@ class PPOTrainer(OLTrainer):
             experience:
                 sequences: [batch_size, prompt_length + response_length] --- <PAD>...<PAD><PROMPT>...<PROMPT><RESPONSE>...<RESPONSE><PAD>...<PAD>
         """
-        self.num_train_step += 1
         self.actor.train()
         self.critic.train()
         num_actions = experience.action_log_probs.size(1)
@@ -229,7 +231,10 @@ class PPOTrainer(OLTrainer):
         action_log_probs = calc_action_log_probs(actor_logits, experience.sequences, num_actions)
 
         actor_loss, to_skip, max_ratio = self.actor_loss_fn(
-            action_log_probs, experience.action_log_probs, experience.advantages, action_mask=experience.action_mask
+            action_log_probs,
+            experience.action_log_probs,
+            experience.advantages,
+            action_mask=experience.action_mask if self.apply_loss_mask else None,
         )
         actor_loss = (1 - self.ptx_coef) * actor_loss
         if not to_skip:
@@ -249,7 +254,10 @@ class PPOTrainer(OLTrainer):
             input_ids=experience.sequences, attention_mask=experience.attention_mask
         )  # [batch size, prompt_length + response_length]
         critic_loss = self.critic_loss_fn(
-            values[:, -num_actions:], experience.values, experience.advantages, action_mask=experience.action_mask
+            values[:, -num_actions:],
+            experience.values,
+            experience.advantages,
+            action_mask=experience.action_mask if self.apply_loss_mask else None,
         )
         critic_loss = critic_loss * self.vf_coef
         self.critic_booster.backward(loss=critic_loss, optimizer=self.critic_optim)
@@ -285,7 +293,7 @@ class PPOTrainer(OLTrainer):
             self.critic_scheduler.step()
 
             # preparing logging model output and corresponding rewards.
-            if self.num_train_step % 10 == 1:
+            if self.num_train_step % 10 == 0:
                 response_text = self.experience_maker.tokenizer.batch_decode(
                     experience.sequences, skip_special_tokens=True
                 )
@@ -327,6 +335,7 @@ class PPOTrainer(OLTrainer):
                 self.writer.add_scalar("value", self.accumulative_meter.get("value"), self.num_train_step)
                 self.writer.add_scalar("advantages", self.accumulative_meter.get("advantages"), self.num_train_step)
             self.accumulative_meter.reset()
+        self.num_train_step += 1
 
     def _learn(self, update_step: int):
         """

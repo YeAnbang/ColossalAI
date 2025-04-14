@@ -50,8 +50,8 @@ def _log_probs_from_logits(logits: torch.Tensor, labels: torch.Tensor) -> torch.
         torch.Tensor: The log probabilities corresponding to the labels.
     """
     log_probs = F.log_softmax(logits, dim=-1)
-    log_probs_labels = log_probs.gather(dim=-1, index=labels.unsqueeze(-1))
-    return log_probs_labels.squeeze(-1)
+    per_label_logps = log_probs.gather(dim=-1, index=labels.unsqueeze(-1))
+    return per_label_logps.squeeze(-1)
 
 
 def calc_action_log_probs(logits: torch.Tensor, sequences: torch.LongTensor, num_actions: int) -> torch.Tensor:
@@ -138,6 +138,21 @@ def disable_dropout(model: torch.nn.Module):
     Returns:
         None
     """
-    for module in model.modules():
-        if isinstance(module, torch.nn.Dropout):
-            module.p = 0.0
+    if model is not None:
+        for module in model.modules():
+            if isinstance(module, torch.nn.Dropout):
+                module.p = 0.0
+
+
+def repad_to_left(tensor, tokenizer):
+    repadded_input_ids = []
+    max_non_padded_seq_len = 0
+    for i in range(tensor.size(0)):
+        non_pad_indices = (tensor[i] != tokenizer.pad_token_id).nonzero(as_tuple=True)[0]
+        start, end = non_pad_indices.min(), non_pad_indices.max()
+        repadded_input_ids.append(tensor[i][start : end + 1])
+        max_non_padded_seq_len = max(max_non_padded_seq_len, repadded_input_ids[-1].size(0))
+    repadded_input_ids = [
+        F.pad(t, (max_non_padded_seq_len - t.size(0), 0), value=tokenizer.pad_token_id) for t in repadded_input_ids
+    ]
+    return torch.stack(repadded_input_ids)

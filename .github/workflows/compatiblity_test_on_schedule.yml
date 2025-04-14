@@ -52,7 +52,7 @@ jobs:
 
       - name: Install Colossal-AI
         run: |
-          BUILD_EXT=1 pip install -v .
+          BUILD_EXT=1 pip install -v -e .
           pip install --no-cache-dir -r requirements/requirements-test.txt
 
       - name: Install tensornvme
@@ -67,6 +67,7 @@ jobs:
           LD_LIBRARY_PATH: /github/home/.tensornvme/lib
           LLAMA_PATH: /data/scratch/llama-tiny
           MOE_TENSOR_PATH: /data/scratch/moe_tensors
+          HF_ENDPOINT: https://hf-mirror.com
 
       - name: Notify Lark
         id: message-preparation

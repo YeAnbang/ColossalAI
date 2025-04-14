@@ -16,7 +16,7 @@ from coati.experience_buffer import NaiveExperienceBuffer
 from coati.experience_maker import Experience
 from torch.optim import Optimizer
 
-from colossalai.booster import Booster
+from colossalai.booster import Booster, Plugin
 
 from .utils import is_rank_0
 
@@ -38,6 +38,7 @@ class SLTrainer(ABC):
         max_epochs: int,
         model: nn.Module,
         optimizer: Optimizer,
+        plugin: Plugin,
         start_epoch: int = 0,
     ) -> None:
         super().__init__()
@@ -45,6 +46,7 @@ class SLTrainer(ABC):
         self.max_epochs = max_epochs
         self.model = model
         self.optimizer = optimizer
+        self.plugin = plugin
         self.start_epoch = start_epoch
 
     @abstractmethod
@@ -94,6 +96,7 @@ class OLTrainer(ABC):
         self.sample_buffer = sample_buffer
         self.dataloader_pin_memory = dataloader_pin_memory
         self.callbacks = callbacks
+        self.num_train_step = 0
 
     @contextmanager
     def _fit_ctx(self) -> None:
@@ -210,5 +213,6 @@ class OLTrainer(ABC):
                         self._update_phase(update_step)
                     # NOTE: this is for on-policy algorithms
                     self.data_buffer.clear()
-                if self.save_interval > 0 and (episode + 1) % (self.save_interval) == 0:
-                    self._save_checkpoint(episode + 1)
+
+                if self.num_train_step > 0 and (self.num_train_step + 1) % (self.save_interval) == 0:
+                    self._save_checkpoint(self.num_train_step + 1)

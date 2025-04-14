@@ -2,11 +2,13 @@ import copy
 
 import pytest
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.testing import assert_close
 
 import colossalai
+from colossalai.cluster import ProcessGroupMesh
 from colossalai.testing import parameterize, rerun_if_address_is_in_use, spawn
 from colossalai.testing.random import seed_all
 from colossalai.zero import LowLevelZeroOptimizer
@@ -51,7 +53,8 @@ def split_ddp_grad(grad, world_size):
     return splited_grad
 
 
-def exam_zero_1_2():
+@parameterize("fp8_communication", [True, False])
+def exam_zero_1_2(fp8_communication: bool):
     """
     In this test, we want to test whether zero stage 1 and 2
     deliver the same numerical results despite different communication
@@ -73,10 +76,18 @@ def exam_zero_1_2():
     zero1_optimizer = torch.optim.Adam(zero1_model.parameters(), lr=1)
     zero2_optimizer = torch.optim.Adam(zero2_model.parameters(), lr=1)
     zero1_optimizer = LowLevelZeroOptimizer(
-        zero1_optimizer, overlap_communication=True, initial_scale=128, verbose=True
+        zero1_optimizer,
+        overlap_communication=True,
+        initial_scale=128,
+        verbose=True,
+        fp8_communication=fp8_communication,
     )
     zero2_optimizer = LowLevelZeroOptimizer(
-        zero2_optimizer, overlap_communication=True, partition_grad=True, initial_scale=128
+        zero2_optimizer,
+        overlap_communication=True,
+        partition_grad=True,
+        initial_scale=128,
+        fp8_communication=fp8_communication,
     )
     # create data
     seed_all(2001 + local_rank)
@@ -97,7 +108,10 @@ def exam_zero_1_2():
         if g1 is None or g2 is None:
             assert g1 is None and g2 is None
             continue
-        assert torch.allclose(g1, g2)
+        if fp8_communication:
+            loose_close(g1, g2, dtype=torch.float16)
+        else:
+            assert torch.allclose(g1, g2)
 
     # step
     zero1_optimizer.step()
@@ -105,12 +119,14 @@ def exam_zero_1_2():
 
     # check updated param
     for z1p, z2p in zip(zero1_model.parameters(), zero2_model.parameters()):
-        assert torch.allclose(z1p, z2p)
+        if not fp8_communication:
+            assert torch.allclose(z1p, z2p)
 
 
 @parameterize("dtype", [torch.float16, torch.bfloat16])
 @parameterize("master_weights", [True, False])
-def exam_zero_1_torch_ddp(world_size, dtype: torch.dtype, master_weights: bool):
+@parameterize("extra_dp_size", [1, 2])
+def exam_zero_1_torch_ddp(dtype: torch.dtype, master_weights: bool, extra_dp_size: int):
     """
     In this test, two pairs of model and optimizers are created.
     1. zero: use sharded optimizer and fp16 parameters
@@ -119,6 +135,15 @@ def exam_zero_1_torch_ddp(world_size, dtype: torch.dtype, master_weights: bool):
     We feed these two sets of models with the same input and check if the
     differences in model output and updated parameters are within tolerance.
     """
+    if extra_dp_size > 1 and dtype != torch.bfloat16:
+        return
+    if extra_dp_size > 1:
+        pg_mesh = ProcessGroupMesh(extra_dp_size, dist.get_world_size() // extra_dp_size)
+        extra_dp_group = pg_mesh.get_group_along_axis(0)
+        dp_group = pg_mesh.get_group_along_axis(1)
+    else:
+        extra_dp_group = None
+        dp_group = None
     local_rank = torch.distributed.get_rank()
     seed_all(1453)
 
@@ -140,6 +165,8 @@ def exam_zero_1_torch_ddp(world_size, dtype: torch.dtype, master_weights: bool):
         initial_scale=1,
         reduce_bucket_size=1024 * 1024,
         master_weights=master_weights,
+        dp_process_group=dp_group,
+        extra_dp_group=extra_dp_group,
     )
 
     torch_optimizer = torch.optim.SGD(torch_model.parameters(), lr=1)
@@ -187,14 +214,14 @@ def exam_zero_1_torch_ddp(world_size, dtype: torch.dtype, master_weights: bool):
 def run_dist(rank, world_size, port):
     colossalai.launch(rank=rank, world_size=world_size, port=port, host="localhost")
 
-    exam_zero_1_torch_ddp(world_size=world_size)
+    exam_zero_1_torch_ddp()
     exam_zero_1_2()
 
 
 @pytest.mark.dist
 @rerun_if_address_is_in_use()
 def test_zero_1_2():
-    spawn(run_dist, 2)
+    spawn(run_dist, 4)
 
 
 if __name__ == "__main__":

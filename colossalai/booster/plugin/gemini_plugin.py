@@ -1,5 +1,3 @@
-import gc
-import logging
 import os
 import random
 from pathlib import Path
@@ -18,15 +16,18 @@ from torch.utils.data.distributed import DistributedSampler
 from colossalai.accelerator import get_accelerator
 from colossalai.checkpoint_io import CheckpointIndexFile, CheckpointIO, GeneralCheckpointIO
 from colossalai.checkpoint_io.utils import (
+    async_save_state_dict_shards,
+    create_pinned_state_dict,
     get_model_base_filenames,
     get_optimizer_base_filenames,
-    load_shard_state_dict,
+    load_state_dict_shards,
     save_config_file,
     save_state_dict,
     save_state_dict_shards,
 )
 from colossalai.cluster import DistCoordinator, ProcessGroupMesh
 from colossalai.interface import ModelWrapper, OptimizerWrapper
+from colossalai.logging import get_dist_logger
 from colossalai.shardformer import ShardConfig, ShardFormer
 from colossalai.zero import GeminiDDP, GeminiOptimizer
 from colossalai.zero.gemini.memory_tracer import MemStats
@@ -63,8 +64,16 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
     def __init__(self) -> None:
         super().__init__()
         self.coordinator = DistCoordinator()
+        self.logger = get_dist_logger()
 
-    def save_unsharded_model(self, model: GeminiDDP, checkpoint: str, gather_dtensor: bool, use_safetensors: bool):
+    def save_unsharded_model(
+        self,
+        model: GeminiDDP,
+        checkpoint: str,
+        gather_dtensor: bool,
+        use_safetensors: bool,
+        use_async: bool = False,
+    ):
         """
         Save sharded model to checkpoint but only on master process.
         The model should be unwrapped in self.load_model via ModelWrapper.unwrap.
@@ -73,17 +82,39 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         assert isinstance(model, GeminiDDP), "Please boost the model before saving!"
         state_dict = model.state_dict(only_rank_0=True)
         if self.coordinator.is_master():
-            save_state_dict(state_dict, checkpoint, use_safetensors)
+            if use_async:
+                from colossalai.utils.safetensors import save
 
-    def load_unsharded_model(self, model: GeminiDDP, checkpoint: str, strict: bool = True):
+                if hash(model) not in self.pinned_state_dicts:
+                    self.pinned_state_dicts[hash(model)] = create_pinned_state_dict(state_dict)
+                for k, v in state_dict.items():
+                    self.pinned_state_dicts[hash(model)][k].copy_(v)
+                    state_dict[k] = self.pinned_state_dicts[hash(model)][k]
+                writer = save(checkpoint, state_dict)
+                self.async_writers.append(writer)
+            else:
+                save_state_dict(state_dict, checkpoint, use_safetensors)
+
+    def load_unsharded_model(
+        self,
+        model: GeminiDDP,
+        checkpoint: str,
+        strict: bool = True,
+        low_cpu_mem_mode: bool = True,
+        num_threads: int = 1,
+    ):
         """
         Load model from checkpoint with automatic unwrapping.
         The model should be unwrapped in self.load_model via ModelWrapper.unwrap.
         """
         assert isinstance(model, GeminiDDP), "Please boost the model before loading!"
-        super().load_unsharded_model(model, checkpoint, strict=strict)
+        super().load_unsharded_model(
+            model, checkpoint, strict=strict, low_cpu_mem_mode=low_cpu_mem_mode, num_threads=num_threads
+        )
 
-    def save_unsharded_optimizer(self, optimizer: GeminiOptimizer, checkpoint: str, gather_dtensor: bool):
+    def save_unsharded_optimizer(
+        self, optimizer: GeminiOptimizer, checkpoint: str, gather_dtensor: bool, use_async: bool = False
+    ):
         """
         Save unsharded optimizer state dict to checkpoint.
         After calling optimizer.state_dict(), the complete optimizer states will be collected on master rank.
@@ -93,15 +124,31 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before saving!"
         state_dict = optimizer.state_dict()
         if self.coordinator.is_master():
-            save_state_dict(state_dict, checkpoint, use_safetensors=False)
+            if use_async:
+                from colossalai.utils.safetensors import _flatten_optim_state_dict, save
 
-    def load_unsharded_optimizer(self, optimizer: GeminiOptimizer, checkpoint: str):
+                flatten_state_dict, metadata = _flatten_optim_state_dict(state_dict)
+                if id(optimizer) not in self.pinned_state_dicts:
+                    self.pinned_state_dicts[id(optimizer)] = create_pinned_state_dict(flatten_state_dict)
+                for k, v in flatten_state_dict.items():
+                    self.pinned_state_dicts[id(optimizer)][k].copy_(v)
+                    flatten_state_dict[k] = self.pinned_state_dicts[id(optimizer)][k]
+                writer = save(checkpoint, flatten_state_dict, metadata)
+                self.async_writers.append(writer)
+            else:
+                save_state_dict(state_dict, checkpoint, use_safetensors=False)
+
+    def load_unsharded_optimizer(
+        self, optimizer: GeminiOptimizer, checkpoint: str, low_cpu_mem_mode: bool = True, num_threads: int = 1
+    ):
         """
         Loading unsharded optimizer from checkpoint file.
         For each process, only loading optimizer states of parameters it controls.
         """
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before loading!"
-        super().load_unsharded_optimizer(optimizer, checkpoint)
+        super().load_unsharded_optimizer(
+            optimizer, checkpoint, low_cpu_mem_mode=low_cpu_mem_mode, num_threads=num_threads
+        )
 
     def save_sharded_model(
         self,
@@ -111,6 +158,7 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         prefix: Optional[str] = None,
         max_shard_size: int = 1024,
         use_safetensors: bool = False,
+        use_async: bool = False,
     ):
         """
         Save sharded model.
@@ -118,48 +166,87 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         """
         assert isinstance(model, GeminiDDP), "Please boost the model before saving!"
         if os.path.isfile(checkpoint_path):
-            logging.error(f"Provided path ({checkpoint_path}) should be a directory, not a file")
+            self.logger.error(f"Provided path ({checkpoint_path}) should be a directory, not a file", ranks=[0])
             return
 
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 
-        state_dict_shard = model.state_dict_shard(max_shard_size=max_shard_size, only_rank_0=True)
+        if use_async and self.coordinator.is_master():
+            if hash(model) not in self.pinned_state_dicts:
+                self.pinned_state_dicts[hash(model)] = {}
+            pinned_state_dicts = self.pinned_state_dicts[hash(model)]
+        else:
+            pinned_state_dicts = None
+        state_dict_shard = model.state_dict_shard(
+            max_shard_size=max_shard_size, only_rank_0=True, pinned_state_dicts=pinned_state_dicts
+        )
         weights_name, save_index_file = get_model_base_filenames(prefix, use_safetensors)
         index_file = CheckpointIndexFile(checkpoint_path)
 
         # Save shards of optimizer states.
         is_master = self.coordinator.is_master()
-        total_size = save_state_dict_shards(
-            sharded_state_dict=state_dict_shard,
-            checkpoint=checkpoint_path,
-            index_file=index_file,
-            base_filename=weights_name,
-            is_master=is_master,
-            use_safetensors=use_safetensors,
-        )
+        if use_async:
+            total_size, writers = async_save_state_dict_shards(
+                sharded_state_dict=state_dict_shard,
+                checkpoint=checkpoint_path,
+                index_file=index_file,
+                base_filename=weights_name,
+                is_master=is_master,
+            )
+            self.async_writers.extend(writers)
+        else:
+            total_size = save_state_dict_shards(
+                sharded_state_dict=state_dict_shard,
+                checkpoint=checkpoint_path,
+                index_file=index_file,
+                base_filename=weights_name,
+                is_master=is_master,
+                use_safetensors=use_safetensors,
+            )
 
         # only save the index file on the master rank
         if self.coordinator.is_master():
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
             save_config_file(model.unwrap(), checkpoint_path)
-            logging.info(
+            self.logger.info(
                 f"The model is split into checkpoint shards. "
                 f"You can find where each parameters has been saved in the "
-                f"index located at {save_index_file}."
+                f"index located at {save_index_file}.",
+                ranks=[0],
             )
 
     def load_sharded_model(
-        self, model: GeminiDDP, checkpoint_index_file: Path, strict: bool = False, use_safetensors: bool = False
+        self,
+        model: GeminiDDP,
+        checkpoint_index_file: Path,
+        strict: bool = False,
+        use_safetensors: bool = False,
+        low_cpu_mem_mode: bool = True,
+        num_threads: int = 1,
     ):
         """
         Load shard model, load model from multiple files.
         """
         assert isinstance(model, GeminiDDP), "Please boost the model before loading!"
-        return super().load_sharded_model(model, checkpoint_index_file, strict, use_safetensors, load_sub_module=False)
+        return super().load_sharded_model(
+            model,
+            checkpoint_index_file,
+            strict,
+            use_safetensors,
+            load_sub_module=False,
+            low_cpu_mem_mode=low_cpu_mem_mode,
+            num_threads=num_threads,
+        )
 
     def save_sharded_optimizer(
-        self, optimizer: GeminiOptimizer, checkpoint: Path, gather_dtensor: bool, prefix: str, size_per_shard: int
+        self,
+        optimizer: GeminiOptimizer,
+        checkpoint: Path,
+        gather_dtensor: bool,
+        prefix: str,
+        size_per_shard: int,
+        use_async: bool = False,
     ):
         """
         Save sharded optimizer state dict to checkpoint folder.
@@ -168,13 +255,13 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before saving!"
 
         if os.path.isfile(checkpoint):
-            logging.error(f"Provided path ({checkpoint}) should be a directory, not a file")
+            self.logger.error(f"Provided path ({checkpoint}) should be a directory, not a file", ranks=[0])
             return
 
         Path(checkpoint).mkdir(parents=True, exist_ok=True)
 
         # Preparing file paths and index file.
-        states_name, save_index_file, param_group_file = get_optimizer_base_filenames(prefix)
+        states_name, save_index_file, param_group_file = get_optimizer_base_filenames(prefix, use_safetensors=use_async)
         index_file = CheckpointIndexFile(checkpoint)
         index_file.append_meta_data("param_groups", param_group_file)
 
@@ -185,36 +272,63 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
             torch.save(param_groups, group_file_path)
 
         # States are broken into shards within max_shard_size.
-        state_dict_shard = optimizer.state_shard(prefix=prefix, max_shard_size=size_per_shard, only_rank_0=True)
+        if use_async and self.coordinator.is_master():
+            if id(optimizer) not in self.pinned_state_dicts:
+                self.pinned_state_dicts[id(optimizer)] = {}
+            pinned_state_dicts = self.pinned_state_dicts[id(optimizer)]
+        else:
+            pinned_state_dicts = None
+        state_dict_shard = optimizer.state_shard(
+            prefix=prefix, max_shard_size=size_per_shard, only_rank_0=True, pinned_state_dicts=pinned_state_dicts
+        )
 
         # Save shards of optimizer states.
-        total_size = save_state_dict_shards(
-            sharded_state_dict=state_dict_shard,
-            checkpoint=checkpoint,
-            index_file=index_file,
-            base_filename=states_name,
-            is_master=self.coordinator.is_master(),
-            use_safetensors=False,
-        )
+        if use_async:
+            total_size, writers = async_save_state_dict_shards(
+                sharded_state_dict=state_dict_shard,
+                checkpoint=checkpoint,
+                index_file=index_file,
+                base_filename=states_name,
+                is_master=self.coordinator.is_master(),
+                state_preprocess=True,
+            )
+            self.async_writers.extend(writers)
+        else:
+            total_size = save_state_dict_shards(
+                sharded_state_dict=state_dict_shard,
+                checkpoint=checkpoint,
+                index_file=index_file,
+                base_filename=states_name,
+                is_master=self.coordinator.is_master(),
+                use_safetensors=False,
+            )
 
         # Wrap up index file. Only save it on master rank.
         if self.coordinator.is_master():
             index_file.append_meta_data("total_size", total_size)
             index_file.write_index_file(save_index_file)
-            logging.info(
+            self.logger.info(
                 f"The optimizer is going to be split to checkpoint shards. "
                 f"You can find where each parameters has been saved in the "
-                f"index located at {save_index_file}."
+                f"index located at {save_index_file}.",
+                ranks=[0],
             )
 
-    def load_sharded_optimizer(self, optimizer: GeminiOptimizer, checkpoint_index_file: Path, prefix: str):
+    def load_sharded_optimizer(
+        self,
+        optimizer: GeminiOptimizer,
+        checkpoint_index_file: Path,
+        prefix: str,
+        low_cpu_mem_mode: bool = True,
+        num_threads: int = 1,
+    ):
         """
         Loading sharded optimizer from checkpoint folder, with index file given.
         For each process, only loading optimizer states of parameters it controls.
         """
         assert isinstance(optimizer, GeminiOptimizer), "Please boost the optimizer before loading!"
         if not os.path.isfile(checkpoint_index_file):
-            logging.error(f"Provided path ({checkpoint_index_file}) should be a file")
+            self.logger.error(f"Provided path ({checkpoint_index_file}) should be a file", ranks=[0])
 
         assert isinstance(optimizer, GeminiOptimizer)
 
@@ -235,11 +349,12 @@ class GeminiCheckpointIO(GeneralCheckpointIO):
 
         # Load optimizer states from shard files under checkpoint path.
         # For each file, only load the states managed by current process.
-        for shard_file in checkpoint_files:
-            state_dict_shard = load_shard_state_dict(Path(shard_file), use_safetensors=False)
+        for state_dict_shard in load_state_dict_shards(
+            checkpoint_files, True, False, low_cpu_mem_mode=low_cpu_mem_mode
+        ):
+            if not low_cpu_mem_mode:
+                state_dict_shard = create_pinned_state_dict(state_dict_shard, empty=False, num_threads=num_threads)
             optimizer.load_param_states(state_dict_shard)
-            del state_dict_shard
-            gc.collect()
 
         optimizer.optimizer_loading_epilogue()
 
@@ -319,8 +434,9 @@ class GeminiPlugin(DPPluginBase):
         enable_flash_attention (bool, optional): Whether to switch on flash attention in Shardformer. Defaults to False.
         enable_jit_fused (bool, optional): Whether to switch on JIT in Shardformer. Default to False.
         enable_sequence_parallelism (bool): Whether to turn on sequence parallelism in Shardformer. Defaults to False.
-        enable_sequence_overlap (bool): Whether to turn on sequence overlap in Shardformer. Defaults to False.
+        use_fp8 (bool, optional): Whether to enable fp8 mixed precision training. Defaults to False.
         verbose (bool, optional): verbose mode. Debug info including chunk search result will be printed. Defaults to False.
+        fp8_communication (bool, optional): Whether to enable fp8 communication. Defaults to False.
     """
 
     def __init__(
@@ -361,17 +477,21 @@ class GeminiPlugin(DPPluginBase):
         enable_flash_attention: bool = False,
         enable_sequence_parallelism: bool = False,
         enable_jit_fused: bool = False,
-        enable_sequence_overlap: bool = False,
         enable_async_reduce: bool = True,
+        use_fp8: bool = False,
         verbose: bool = False,
+        fp8_communication: bool = False,
     ) -> None:
         super().__init__()
         assert precision in SUPPORTED_PRECISION, f"precision {precision} is not supported"
         if get_accelerator().name == "npu":
             assert placement_policy == "static", "NPU only supports static placement policy"
+
+        self.logger = get_dist_logger()
         if enable_async_reduce and not pin_memory:
-            logging.warning(
-                f"enable_async_reduce sets pin_memory=True to achieve best performance, which is not implicitly set."
+            self.logger.warning(
+                f"enable_async_reduce sets pin_memory=True to achieve best performance, which is not implicitly set.",
+                ranks=[0],
             )
             pin_memory = True
         self.gemini_config = dict(
@@ -395,6 +515,8 @@ class GeminiPlugin(DPPluginBase):
             master_weights=master_weights,
             max_prefetch=max_prefetch,
             enable_async_reduce=enable_async_reduce,
+            fp8_communication=fp8_communication,
+            use_fp8=use_fp8,
         )
         self.zero_optim_config = dict(
             gpu_margin_mem_ratio=gpu_margin_mem_ratio,
@@ -416,7 +538,6 @@ class GeminiPlugin(DPPluginBase):
         self.enable_flash_attention = enable_flash_attention
         self.enable_sequence_parallelism = enable_sequence_parallelism if self.enable_tensor_parallelism else False
         self.enable_jit_fused = enable_jit_fused
-        self.enable_sequence_overlap = enable_sequence_overlap
         self.verbose = verbose
 
         self.tp_size = tp_size
@@ -443,7 +564,6 @@ class GeminiPlugin(DPPluginBase):
             enable_flash_attention=self.enable_flash_attention,
             enable_jit_fused=self.enable_jit_fused,
             enable_sequence_parallelism=self.enable_sequence_parallelism,
-            enable_sequence_overlap=self.enable_sequence_overlap,
         )
 
     def __del__(self):

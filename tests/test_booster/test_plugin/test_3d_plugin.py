@@ -76,6 +76,8 @@ def run_fn(init_method, model_fn, data_gen_fn, output_transform_fn) -> Optional[
 
         booster.execute_pipeline(data_iter, model, _criterion, optimizer, return_loss=True)
         optimizer.step()
+        grad_norm = optimizer.get_grad_norm()
+        assert grad_norm is None or isinstance(grad_norm, float)
 
     except Exception as e:
         return repr(e)
@@ -97,7 +99,7 @@ def check_3d_plugin(init_method: str = "none", early_stop: bool = True):
 
     # TODO(ver217): add more models
     for name, (model_fn, data_gen_fn, output_transform_fn, _, _) in model_zoo.get_sub_registry(
-        "transformers_llama_for_casual_lm"
+        "transformers_llama_for_causal_lm"
     ).items():
         err = run_fn(init_method, model_fn, data_gen_fn, output_transform_fn)
 

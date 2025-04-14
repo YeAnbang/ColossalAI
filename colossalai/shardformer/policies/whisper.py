@@ -72,6 +72,8 @@ class WhisperPolicy(Policy):
                 "Whisper doesn't support sequence parallelism now, will ignore the sequence parallelism flag."
             )
 
+        use_zbv = self.pipeline_stage_manager is not None and self.pipeline_stage_manager.use_zbv
+
         # TODO using the jit fused add_and_dropout affect the accuracy
         if self.shard_config.enable_jit_fused:
             self.shard_config.enable_jit_fused = False
@@ -91,26 +93,50 @@ class WhisperPolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="self_attn.q_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attn.k_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attn.v_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attn.out_proj",
                         target_module=col_nn.Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="fc1",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="fc2",
                         target_module=col_nn.Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                 ],
             )
@@ -128,42 +154,220 @@ class WhisperPolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="self_attn.q_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attn.k_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attn.v_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attn.out_proj",
                         target_module=col_nn.Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="encoder_attn.q_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="encoder_attn.k_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="encoder_attn.v_proj",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="encoder_attn.out_proj",
                         target_module=col_nn.Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="fc1",
                         target_module=col_nn.Linear1D_Col,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="fc2",
                         target_module=col_nn.Linear1D_Row,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                ],
+            )
+        elif use_zbv:
+            policy[WhisperEncoderLayer] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.q_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.k_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.v_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.out_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="fc1",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="fc2",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                ],
+            )
+
+            policy[WhisperDecoderLayer] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.q_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.k_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.v_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attn.out_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="encoder_attn.q_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="encoder_attn.k_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="encoder_attn.v_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="encoder_attn.out_proj",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="fc1",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="fc2",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                 ],
             )
@@ -174,7 +378,14 @@ class WhisperPolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="embed_tokens",
                         target_module=embedding_cls,
-                        kwargs={"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by},
+                        kwargs=(
+                            {
+                                "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                                "fp8_communication": self.shard_config.fp8_communication,
+                            }
+                            if self.shard_config.enable_tensor_parallelism
+                            else {"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by}
+                        ),
                     ),
                 ],
                 policy=policy,
@@ -303,6 +514,7 @@ class WhisperPolicy(Policy):
                     kwargs={
                         "gather_output": True,
                         "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                        "fp8_communication": self.shard_config.fp8_communication,
                     },
                 ),
                 policy=base_policy,
@@ -404,30 +616,66 @@ class WhisperPolicy(Policy):
             num_decoder_layers = 0
 
         held_layers = []
-        layers_per_stage, decoder_starting_stage = self.distribute_whisper_layers(
-            num_encoder_layers, num_decoder_layers, stage_manager.num_stages
-        )
-        start_idx, end_idx = self.get_whisper_stage_index(layers_per_stage, stage_manager.stage, decoder_starting_stage)
+        if stage_manager.is_interleave:
+            layers_per_stage, decoder_starting_stage = self.distribute_whisper_layers(
+                num_encoder_layers, num_decoder_layers, stage_manager.num_stages
+            )
+            stage_indices = self.get_whisper_stage_index(layers_per_stage, stage_manager.stage, decoder_starting_stage)
 
-        if stage_manager.stage < decoder_starting_stage:
-            # current stage is in whisper's encoder
-            if stage_manager.is_first_stage():
-                held_layers.append(encoder.embed_positions)
-                held_layers.append(encoder.conv1)
-                held_layers.append(encoder.conv2)
-            if stage_manager.stage == decoder_starting_stage - 1:
-                held_layers.append(encoder.layer_norm)
-            held_layers.extend(encoder.layers[start_idx:end_idx])
+            if stage_manager.stage < decoder_starting_stage:
+                # current stage is in whisper's encoder
+                if stage_manager.is_first_stage(ignore_chunk=True):
+                    held_layers.append(encoder.embed_positions)
+                    held_layers.append(encoder.conv1)
+                    held_layers.append(encoder.conv2)
+                # interleaved: not use_zbv & stage_manager.stage == decoder_starting_stage - 1
+                # zbv: use_zbv & stage_manager.stage == first stage
+                if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                    not stage_manager.use_zbv and decoder_starting_stage - 1
+                ):
+                    held_layers.append(encoder.layer_norm)
+                for start_idx, end_idx in stage_indices:
+                    held_layers.extend(encoder.layers[start_idx:end_idx])
+            else:
+                # current stage is in whisper's decoder
+                # TODO:(Jianghai) We divide encoder and decoder layers into different parts here,
+                # the case encoder and decoder put in same stage should be add in the future.
+                if stage_manager.stage == decoder_starting_stage:
+                    held_layers.append(decoder.embed_tokens)
+                    held_layers.append(decoder.embed_positions)
+                if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                    not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+                ):
+                    held_layers.append(decoder.layer_norm)
+                for start_idx, end_idx in stage_indices:
+                    held_layers.extend(encoder.layers[start_idx:end_idx])
         else:
-            # current stage is in whisper's decoder
-            # TODO:(Jianghai) We divide encoder and decoder layers into different parts here,
-            # the case encoder and decoder put in same stage should be add in the future.
-            if stage_manager.stage == decoder_starting_stage:
-                held_layers.append(decoder.embed_tokens)
-                held_layers.append(decoder.embed_positions)
-            if stage_manager.is_last_stage():
-                held_layers.append(decoder.layer_norm)
-            held_layers.extend(decoder.layers[start_idx:end_idx])
+            layers_per_stage, decoder_starting_stage = self.distribute_whisper_layers(
+                num_encoder_layers, num_decoder_layers, stage_manager.num_stages
+            )
+            start_idx, end_idx = self.get_whisper_stage_index(
+                layers_per_stage, stage_manager.stage, decoder_starting_stage
+            )
+
+            if stage_manager.stage < decoder_starting_stage:
+                # current stage is in whisper's encoder
+                if stage_manager.is_first_stage():
+                    held_layers.append(encoder.embed_positions)
+                    held_layers.append(encoder.conv1)
+                    held_layers.append(encoder.conv2)
+                if stage_manager.stage == decoder_starting_stage - 1:
+                    held_layers.append(encoder.layer_norm)
+                held_layers.extend(encoder.layers[start_idx:end_idx])
+            else:
+                # current stage is in whisper's decoder
+                # TODO:(Jianghai) We divide encoder and decoder layers into different parts here,
+                # the case encoder and decoder put in same stage should be add in the future.
+                if stage_manager.stage == decoder_starting_stage:
+                    held_layers.append(decoder.embed_tokens)
+                    held_layers.append(decoder.embed_positions)
+                if stage_manager.is_last_stage():
+                    held_layers.append(decoder.layer_norm)
+                held_layers.extend(decoder.layers[start_idx:end_idx])
         return held_layers
 
     def set_pipeline_forward(self, model_cls: nn.Module, new_forward: Callable, policy: Dict) -> None:
@@ -519,8 +767,15 @@ class WhisperForConditionalGenerationPolicy(WhisperPolicy):
 
     def get_held_layers(self) -> List[nn.Module]:
         held_layers = super().get_held_layers()
-        if self.pipeline_stage_manager.is_last_stage():
-            held_layers.append(self.model.proj_out)
+        stage_manager = self.pipeline_stage_manager
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.proj_out)
+        else:
+            if self.pipeline_stage_manager.is_last_stage():
+                held_layers.append(self.model.proj_out)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -573,9 +828,17 @@ class WhisperForAudioClassificationPolicy(WhisperPolicy):
 
     def get_held_layers(self) -> List[nn.Module]:
         held_layers = super().get_held_layers()
-        if self.pipeline_stage_manager.is_last_stage():
-            held_layers.append(self.model.projector)
-            held_layers.append(self.model.classifier)
+        stage_manager = self.pipeline_stage_manager
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.projector)
+                held_layers.append(self.model.classifier)
+        else:
+            if self.pipeline_stage_manager.is_last_stage():
+                held_layers.append(self.model.projector)
+                held_layers.append(self.model.classifier)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

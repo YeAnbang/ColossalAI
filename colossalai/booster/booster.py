@@ -1,4 +1,3 @@
-import warnings
 from contextlib import contextmanager
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
@@ -7,6 +6,8 @@ import torch.nn as nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
+
+from colossalai.logging import get_dist_logger
 
 SUPPORT_PEFT = False
 try:
@@ -81,12 +82,15 @@ class Booster:
                 plugin, Plugin
             ), f"Expected the argument plugin to be an instance of Plugin, but got {type(plugin)}."
         self.plugin = plugin
+        self.logger = get_dist_logger()
 
         # set accelerator
         if self.plugin and self.plugin.control_device():
             self.accelerator = None
             if device is not None:
-                warnings.warn("The plugin will control the accelerator, so the device argument will be ignored.")
+                self.logger.warning(
+                    "The plugin will control the accelerator," "so the device argument will be ignored.", ranks=[0]
+                )
         else:
             device = device or "cuda"
             self.accelerator = Accelerator(device)
@@ -94,7 +98,10 @@ class Booster:
         # set precision
         if self.plugin and self.plugin.control_precision():
             if mixed_precision is not None:
-                warnings.warn("The plugin will control the precision, so the mixed_precision argument will be ignored.")
+                self.logger.warning(
+                    "The plugin will control the precision," "so the mixed_precision argument will be ignored.",
+                    ranks=[0],
+                )
             self.mixed_precision = None
         elif mixed_precision is None:
             self.mixed_precision = None
@@ -267,8 +274,9 @@ class Booster:
             ), "Please provide pretrained directory path if not passing in lora configuration."
         if quantize is True:
             if bnb_quantization_config is not None:
-                warnings.warn(
-                    "User defined BnbQuantizationConfig is not fully tested in ColossalAI. Use it at your own risk."
+                self.logger.warning(
+                    "User defined BnbQuantizationConfig is not fully tested in ColossalAI. Use it at your own risk.",
+                    ranks=[0],
                 )
             else:
                 bnb_quantization_config = BnbQuantizationConfig(
@@ -280,7 +288,14 @@ class Booster:
 
         return self.plugin.enable_lora(model, pretrained_dir, lora_config, bnb_quantization_config)
 
-    def load_model(self, model: Union[nn.Module, ModelWrapper], checkpoint: str, strict: bool = True) -> None:
+    def load_model(
+        self,
+        model: Union[nn.Module, ModelWrapper],
+        checkpoint: str,
+        strict: bool = True,
+        low_cpu_mem_mode: bool = True,
+        num_threads: int = 1,
+    ) -> None:
         """Load model from checkpoint.
 
         Args:
@@ -290,8 +305,12 @@ class Booster:
             strict (bool, optional): whether to strictly enforce that the keys
                 in :attr:`state_dict` match the keys returned by this module's
                 :meth:`~torch.nn.Module.state_dict` function. Defaults to True.
+            low_cpu_mem_mode (bool): whether to load the model in low cpu memory mode. If false, it will use RAM cache to accelerate loading. Default: True.
+            num_threads (int): number of threads to use when loading the model. Only useful when disabling low cpu mem mode. Default: 1.
         """
-        self.checkpoint_io.load_model(model, checkpoint, strict)
+        self.checkpoint_io.load_model(
+            model, checkpoint, strict, low_cpu_mem_mode=low_cpu_mem_mode, num_threads=num_threads
+        )
 
     def save_model(
         self,
@@ -302,6 +321,7 @@ class Booster:
         prefix: Optional[str] = None,
         size_per_shard: int = 1024,
         use_safetensors: bool = False,
+        use_async: bool = False,
     ) -> None:
         """Save model to checkpoint.
 
@@ -316,6 +336,7 @@ class Booster:
                 names to compose the keys in state_dict. Defaults to None.
             size_per_shard (int, optional): Maximum size of checkpoint shard file in MB. This is useful only when ``shard=True``. Defaults to 1024.
             use_safetensors (bool, optional): whether to use safe tensors. Default: False. If set to True, the checkpoint will be saved.
+            use_async (bool, optional): whether to save the state_dict of model asynchronously. Default: False.
         """
         self.checkpoint_io.save_model(
             model,
@@ -325,20 +346,28 @@ class Booster:
             prefix=prefix,
             size_per_shard=size_per_shard,
             use_safetensors=use_safetensors,
+            use_async=use_async,
         )
 
-    def load_optimizer(self, optimizer: Optimizer, checkpoint: str) -> None:
+    def load_optimizer(
+        self,
+        optimizer: Optimizer,
+        checkpoint: str,
+        low_cpu_mem_mode: bool = True,
+        num_threads: int = 1,
+    ) -> None:
         """Load optimizer from checkpoint.
 
         Args:
             optimizer (Optimizer): An optimizer boosted by Booster.
             checkpoint (str): Path to the checkpoint. It must be a local path.
                 It should be a directory path if the checkpoint is sharded. Otherwise, it should be a file path.
-            prefix (str, optional): A prefix added to parameter and buffer
-                names to compose the keys in state_dict. Defaults to None.
-            size_per_shard (int, optional): Maximum size of checkpoint shard file in MB. This is useful only when ``shard=True``. Defaults to 1024.
+            low_cpu_mem_mode (bool): whether to load the model in low cpu memory mode. If false, it will use RAM cache to accelerate loading. Default: True.
+            num_threads (int): number of threads to use when loading the model. Only useful when disabling low cpu mem mode. Default: 1.
         """
-        self.checkpoint_io.load_optimizer(optimizer, checkpoint)
+        self.checkpoint_io.load_optimizer(
+            optimizer, checkpoint, low_cpu_mem_mode=low_cpu_mem_mode, num_threads=num_threads
+        )
 
     def save_optimizer(
         self,
@@ -348,6 +377,7 @@ class Booster:
         gather_dtensor: bool = True,
         prefix: Optional[str] = None,
         size_per_shard: int = 1024,
+        use_async: bool = False,
     ) -> None:
         """
         Save optimizer to checkpoint.
@@ -363,7 +393,9 @@ class Booster:
                 names to compose the keys in state_dict. Defaults to None.
             size_per_shard (int, optional): Maximum size of checkpoint shard file in MB. This is useful only when ``shard=True``. Defaults to 1024.
         """
-        self.checkpoint_io.save_optimizer(optimizer, checkpoint, shard, gather_dtensor, prefix, size_per_shard)
+        self.checkpoint_io.save_optimizer(
+            optimizer, checkpoint, shard, gather_dtensor, prefix, size_per_shard, use_async=use_async
+        )
 
     def save_lr_scheduler(self, lr_scheduler: LRScheduler, checkpoint: str) -> None:
         """Save lr scheduler to checkpoint.

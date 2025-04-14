@@ -57,8 +57,9 @@ class BloomPolicy(Policy):
             )
             sp_mode = "split_gather"
 
-        overlap = self.shard_config.enable_sequence_overlap
         sp_partial_derived = sp_mode == "split_gather"
+
+        use_zbv = self.pipeline_stage_manager is not None and self.pipeline_stage_manager.use_zbv
 
         if self.shard_config.enable_tensor_parallelism:
             assert (
@@ -76,12 +77,20 @@ class BloomPolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="self_attention.query_key_value",
                         target_module=col_nn.Linear1D_Col,
-                        kwargs={"seq_parallel_mode": sp_mode, "overlap": overlap},
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attention.dense",
                         target_module=col_nn.Linear1D_Row,
-                        kwargs={"seq_parallel_mode": sp_mode},
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="self_attention.attention_dropout",
@@ -90,12 +99,20 @@ class BloomPolicy(Policy):
                     SubModuleReplacementDescription(
                         suffix="mlp.dense_h_to_4h",
                         target_module=col_nn.Linear1D_Col,
-                        kwargs={"seq_parallel_mode": sp_mode, "overlap": overlap},
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                     SubModuleReplacementDescription(
                         suffix="mlp.dense_4h_to_h",
                         target_module=col_nn.Linear1D_Row,
-                        kwargs={"seq_parallel_mode": sp_mode},
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
                     ),
                 ],
             )
@@ -109,13 +126,66 @@ class BloomPolicy(Policy):
                 },
             )
 
+        if use_zbv:
+            policy[BloomBlock] = ModulePolicyDescription(
+                sub_module_replacement=[
+                    SubModuleReplacementDescription(
+                        suffix="self_attention.query_key_value",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attention.dense",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="self_attention.attention_dropout",
+                        target_module=col_nn.DropoutForParallelInput,
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="mlp.dense_h_to_4h",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="mlp.dense_4h_to_h",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs={
+                            "seq_parallel_mode": sp_mode,
+                            "fp8_communication": self.shard_config.fp8_communication,
+                            "use_zbv": use_zbv,
+                        },
+                    ),
+                ],
+            )
+
         if embedding_cls is not None:
             self.append_or_create_submodule_replacement(
                 description=[
                     SubModuleReplacementDescription(
                         suffix="word_embeddings",
                         target_module=embedding_cls,
-                        kwargs={"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by},
+                        kwargs=(
+                            {
+                                "make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by,
+                                "fp8_communication": self.shard_config.fp8_communication,
+                            }
+                            if self.shard_config.enable_tensor_parallelism
+                            else {"make_vocab_size_divisible_by": self.shard_config.make_vocab_size_divisible_by}
+                        ),
                     ),
                 ],
                 policy=policy,
@@ -229,14 +299,27 @@ class BloomPolicy(Policy):
         stage_manager = self.pipeline_stage_manager
 
         held_layers = []
-        layers_per_stage = stage_manager.distribute_layers(len(module.h))
-        if stage_manager.is_first_stage():
-            held_layers.append(module.word_embeddings)
-            held_layers.append(module.word_embeddings_layernorm)
-        start_idx, end_idx = stage_manager.get_stage_index(layers_per_stage)
-        held_layers.extend(module.h[start_idx:end_idx])
-        if stage_manager.is_last_stage():
-            held_layers.append(module.ln_f)
+        if stage_manager.is_interleave:
+            layers_per_stage = stage_manager.distribute_layers(len(module.h))
+            stage_indices = stage_manager.get_stage_index(layers_per_stage)
+            if stage_manager.is_first_stage(ignore_chunk=True):
+                held_layers.append(module.word_embeddings)
+                held_layers.append(module.word_embeddings_layernorm)
+            for start_idx, end_idx in stage_indices:
+                held_layers.extend(module.h[start_idx:end_idx])
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(module.ln_f)
+        else:
+            layers_per_stage = stage_manager.distribute_layers(len(module.h))
+            if stage_manager.is_first_stage():
+                held_layers.append(module.word_embeddings)
+                held_layers.append(module.word_embeddings_layernorm)
+            start_idx, end_idx = stage_manager.get_stage_index(layers_per_stage)
+            held_layers.extend(module.h[start_idx:end_idx])
+            if stage_manager.is_last_stage():
+                held_layers.append(module.ln_f)
 
         return held_layers
 
@@ -279,6 +362,7 @@ class BloomForCausalLMPolicy(BloomPolicy):
                     kwargs=dict(
                         gather_output=not self.shard_config.parallel_output,
                         make_vocab_size_divisible_by=self.shard_config.make_vocab_size_divisible_by,
+                        fp8_communication=self.shard_config.fp8_communication,
                     ),
                 ),
                 policy=policy,
@@ -309,8 +393,14 @@ class BloomForCausalLMPolicy(BloomPolicy):
         """Get pipeline layers for current stage."""
         stage_manager = self.pipeline_stage_manager
         held_layers = super().get_held_layers()
-        if stage_manager.is_last_stage():
-            held_layers.append(self.model.lm_head)
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.lm_head)
+        else:
+            if stage_manager.is_last_stage():
+                held_layers.append(self.model.lm_head)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -332,12 +422,27 @@ class BloomForSequenceClassificationPolicy(BloomPolicy):
         from transformers.models.bloom.modeling_bloom import BloomForSequenceClassification
 
         policy = super().module_policy()
+        use_zbv = self.pipeline_stage_manager is not None and self.pipeline_stage_manager.use_zbv
 
         # handle tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
                 description=SubModuleReplacementDescription(
-                    suffix="score", target_module=col_nn.Linear1D_Col, kwargs=dict(gather_output=True)
+                    suffix="score",
+                    target_module=col_nn.Linear1D_Col,
+                    kwargs=dict(gather_output=True, fp8_communication=self.shard_config.fp8_communication),
+                ),
+                policy=policy,
+                target_key=BloomForSequenceClassification,
+            )
+        elif use_zbv:
+            self.append_or_create_submodule_replacement(
+                description=SubModuleReplacementDescription(
+                    suffix="score",
+                    target_module=col_nn.LinearWithGradAccum,
+                    kwargs=dict(
+                        gather_output=True, fp8_communication=self.shard_config.fp8_communication, use_zbv=use_zbv
+                    ),
                 ),
                 policy=policy,
                 target_key=BloomForSequenceClassification,
@@ -354,8 +459,14 @@ class BloomForSequenceClassificationPolicy(BloomPolicy):
         """Get pipeline layers for current stage."""
         stage_manager = self.pipeline_stage_manager
         held_layers = super().get_held_layers()
-        if stage_manager.is_last_stage():
-            held_layers.append(self.model.score)
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.score)
+        else:
+            if stage_manager.is_last_stage():
+                held_layers.append(self.model.score)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -368,13 +479,34 @@ class BloomForTokenClassificationPolicy(BloomPolicy):
         from transformers.models.bloom.modeling_bloom import BloomForTokenClassification
 
         policy = super().module_policy()
+        use_zbv = self.pipeline_stage_manager is not None and self.pipeline_stage_manager.use_zbv
 
         # handle tensor parallelism
         if self.shard_config.enable_tensor_parallelism:
             self.append_or_create_submodule_replacement(
                 description=[
                     SubModuleReplacementDescription(
-                        suffix="classifier", target_module=col_nn.Linear1D_Col, kwargs=dict(gather_output=True)
+                        suffix="classifier",
+                        target_module=col_nn.Linear1D_Col,
+                        kwargs=dict(gather_output=True, fp8_communication=self.shard_config.fp8_communication),
+                    ),
+                    SubModuleReplacementDescription(
+                        suffix="dropout",
+                        target_module=col_nn.DropoutForReplicatedInput,
+                    ),
+                ],
+                policy=policy,
+                target_key=BloomForTokenClassification,
+            )
+        elif use_zbv:
+            self.append_or_create_submodule_replacement(
+                description=[
+                    SubModuleReplacementDescription(
+                        suffix="classifier",
+                        target_module=col_nn.LinearWithGradAccum,
+                        kwargs=dict(
+                            gather_output=True, fp8_communication=self.shard_config.fp8_communication, use_zbv=use_zbv
+                        ),
                     ),
                     SubModuleReplacementDescription(
                         suffix="dropout",
@@ -397,9 +529,16 @@ class BloomForTokenClassificationPolicy(BloomPolicy):
         """Get pipeline layers for current stage."""
         stage_manager = self.pipeline_stage_manager
         held_layers = super().get_held_layers()
-        if stage_manager.is_last_stage():
-            held_layers.append(self.model.dropout)
-            held_layers.append(self.model.classifier)
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.dropout)
+                held_layers.append(self.model.classifier)
+        else:
+            if stage_manager.is_last_stage():
+                held_layers.append(self.model.dropout)
+                held_layers.append(self.model.classifier)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:
@@ -425,8 +564,14 @@ class BloomForQuestionAnsweringPolicy(BloomPolicy):
         """Get pipeline layers for current stage."""
         held_layers = super().get_held_layers()
         stage_manager = self.pipeline_stage_manager
-        if stage_manager.is_last_stage():
-            held_layers.append(self.model.qa_outputs)
+        if stage_manager.is_interleave:
+            if (stage_manager.use_zbv and stage_manager.is_first_stage(ignore_chunk=True)) or (
+                not stage_manager.use_zbv and stage_manager.is_last_stage(ignore_chunk=True)
+            ):
+                held_layers.append(self.model.qa_outputs)
+        else:
+            if stage_manager.is_last_stage():
+                held_layers.append(self.model.qa_outputs)
         return held_layers
 
     def get_shared_params(self) -> List[Dict[int, Tensor]]:

@@ -15,7 +15,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import DataLoader
 from transformers import PreTrainedTokenizerBase
 
-from colossalai.booster import Booster
+from colossalai.booster import Booster, Plugin
 from colossalai.cluster import DistCoordinator
 from colossalai.utils import get_current_device
 
@@ -48,6 +48,7 @@ class RewardModelTrainer(SLTrainer):
         model: Any,
         booster: Booster,
         optimizer: Optimizer,
+        plugin: Plugin,
         lr_scheduler: _LRScheduler,
         tokenizer: PreTrainedTokenizerBase,
         loss_fn: Optional[Callable] = None,
@@ -59,7 +60,9 @@ class RewardModelTrainer(SLTrainer):
         save_dir: str = None,
         coordinator: DistCoordinator = None,
     ) -> None:
-        super().__init__(booster, max_epochs=max_epochs, model=model, optimizer=optimizer, start_epoch=start_epoch)
+        super().__init__(
+            booster, max_epochs=max_epochs, model=model, optimizer=optimizer, plugin=plugin, start_epoch=start_epoch
+        )
         self.actor_scheduler = lr_scheduler
         self.tokenizer = tokenizer
         self.loss_fn = loss_fn if loss_fn is not None else LogSigLoss(beta=beta)
@@ -147,29 +150,29 @@ class RewardModelTrainer(SLTrainer):
             self.accumulative_meter.add("loss", loss_mean.to(torch.float16).item())
             self.accumulative_meter.add("accuracy", accuracy_mean.mean().to(torch.float16).item())
 
-            if (i + 1) % self.accumulation_steps == 0:
+            if (self.num_train_step + 1) % self.accumulation_steps == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
                 self.actor_scheduler.step()
                 step_bar.update()
-                self.num_train_step += 1
 
                 # Logging
                 if self.writer and is_rank_0():
-                    self.writer.add_scalar("train/loss", self.accumulative_meter.get("loss"), self.num_train_step)
-                    self.writer.add_scalar("train/lr", self.optimizer.param_groups[0]["lr"], self.num_train_step)
+                    global_step = (self.num_train_step + 1) / self.accumulation_steps
+                    self.writer.add_scalar("train/loss", self.accumulative_meter.get("loss"), global_step)
+                    self.writer.add_scalar("train/lr", self.optimizer.param_groups[0]["lr"], global_step)
                     self.writer.add_scalar(
                         "train/dist",
                         self.accumulative_meter.get("chosen_rewards") - self.accumulative_meter.get("rejected_rewards"),
-                        self.num_train_step,
+                        global_step,
                     )
                     self.writer.add_scalar(
-                        "train/reward_chosen", self.accumulative_meter.get("chosen_rewards"), self.num_train_step
+                        "train/reward_chosen", self.accumulative_meter.get("chosen_rewards"), global_step
                     )
                     self.writer.add_scalar(
-                        "train/reward_reject", self.accumulative_meter.get("rejected_rewards"), self.num_train_step
+                        "train/reward_reject", self.accumulative_meter.get("rejected_rewards"), global_step
                     )
-                    self.writer.add_scalar("train/acc", self.accumulative_meter.get("accuracy"), self.num_train_step)
+                    self.writer.add_scalar("train/acc", self.accumulative_meter.get("accuracy"), global_step)
 
                 self.accumulative_meter.reset()
 
@@ -190,6 +193,7 @@ class RewardModelTrainer(SLTrainer):
                     self.coordinator.print_on_master(
                         f"Saved checkpoint at epoch {epoch} step {(i + 1)/self.accumulation_steps} at folder {self.save_dir}"
                     )
+            self.num_train_step += 1
         step_bar.close()
 
     def _eval(self, epoch):

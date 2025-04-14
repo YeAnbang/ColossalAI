@@ -50,6 +50,8 @@ def run_fn(stage, model_fn, data_gen_fn, output_transform_fn, lora_config=None) 
 
         booster.backward(loss, optimizer)
         optimizer.step()
+        grad_norm = optimizer.get_grad_norm()
+        assert grad_norm is None or isinstance(grad_norm, float)
 
     except Exception as e:
         return repr(e)
@@ -105,7 +107,7 @@ def check_low_level_zero_lora(stage, model_name, early_stop: bool = True):
     sub_model_zoo = model_zoo.get_sub_registry(model_name)
     for name, (model_fn, data_gen_fn, output_transform_fn, loss_fn, _) in sub_model_zoo.items():
         task_type = None
-        if name == "transformers_llama_for_casual_lm":
+        if name == "transformers_llama_for_causal_lm":
             task_type = "CAUSAL_LM"
         if name == "transformers_llama_for_sequence_classification":
             task_type = "SEQ_CLS"

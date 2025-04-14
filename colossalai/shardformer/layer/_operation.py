@@ -1,6 +1,18 @@
+import functools
+
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
+
+from colossalai.pipeline.weight_grad_store import WeightGradStore
+
+from .utils import (
+    execute_conv1d_w_pass,
+    execute_conv1d_w_pass_grad_accum,
+    execute_w_pass,
+    execute_w_pass_grad_accum,
+    is_share_sp_tp,
+)
 
 try:
     import fused_mix_prec_layer_norm_cuda
@@ -13,6 +25,14 @@ try:
     _grad_accum_fusion_available = True
 except ImportError:
     _grad_accum_fusion_available = False
+
+from colossalai.quantization.fp8 import (
+    all_gather_fp8,
+    all_reduce_fp8,
+    all_to_all_fp8,
+    all_to_all_single_fp8,
+    reduce_scatter_fp8,
+)
 
 
 class FusedLayerNormAffineFunction1D(torch.autograd.Function):
@@ -59,11 +79,13 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, weight, bias, process_group, async_grad_allreduce):
+    def forward(ctx, input_, weight, bias, process_group, async_grad_allreduce, fp8_communication=False, use_zbv=False):
         ctx.save_for_backward(input_, weight, bias)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
         ctx.async_grad_allreduce = async_grad_allreduce
+        ctx.fp8_communication = fp8_communication
+        ctx.use_zbv = use_zbv
 
         output = torch.matmul(input_, weight)
 
@@ -76,8 +98,11 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
     def backward(ctx, grad_output):
         input, weight, bias = ctx.saved_tensors
         use_bias = ctx.use_bias
+        fp8_communication = ctx.fp8_communication
+        use_zbv = ctx.use_zbv
 
         # In order to be hooked into Gemini's '__torch_function__', adding a view operation to weight and bias.
+        weight_origin = weight
         weight = weight.view(weight.shape)
         if bias is not None:
             bias = bias.view(bias.shape)
@@ -90,19 +115,137 @@ class MatmulWithAsyncCommunication(torch.autograd.Function):
             grad_output = grad_output.view(-1, grad_output.shape[-1])
             total_input = total_input.view(-1, total_input.shape[-1])
 
-        if ctx.async_grad_allreduce:
+        if fp8_communication or not ctx.async_grad_allreduce:
+            _reduce(grad_input, group=ctx.process_group, fp8_communication=fp8_communication, fp8_format="e5m2")
+        elif ctx.async_grad_allreduce:
             # Asynchronous all-reduce
             handle = dist.all_reduce(grad_input, group=ctx.process_group, async_op=True)
-            # Relay on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
+            # Rely on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
             # all-reduce scheduled first and have GPU resources allocated, CUDA_DEVICE_MAX_CONNECTIONS=1 is set in shardformer.py
 
-        grad_weight = total_input.t().matmul(grad_output)
+        # split dx & dw
+        if _grad_accum_fusion_available and weight.grad is not None:
+            grad = weight.grad
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    (weight, weight_origin),
+                    functools.partial(
+                        execute_conv1d_w_pass_grad_accum,
+                    ),
+                )
+                grad_weight = None
+            else:
+                if grad.dtype == torch.float32:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+                    grad_weight = None
+                elif grad.dtype == torch.float16:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+                    grad_weight = None
+                else:
+                    grad_weight = total_input.t().matmul(grad_output)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    (weight, weight_origin),
+                    functools.partial(
+                        execute_conv1d_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
+                grad_weight = None
+            else:
+                grad_weight = total_input.t().matmul(grad_output)
         grad_bias = grad_output.sum(dim=0) if use_bias else None
 
-        if ctx.async_grad_allreduce:
+        if ctx.async_grad_allreduce and not fp8_communication:
             handle.wait()
 
-        return grad_input, grad_weight, grad_bias, None, None, None
+        return grad_input, grad_weight, grad_bias, None, None, None, None
+
+
+class MatmulWithGradAccum(torch.autograd.Function):
+    """
+    Linear layer execution with grad accum in backprop. (no tp version)
+    """
+
+    @staticmethod
+    def forward(ctx, input_, weight, bias, async_grad_allreduce, use_zbv=False):
+        ctx.save_for_backward(input_, weight, bias)
+        ctx.use_bias = bias is not None
+        ctx.async_grad_allreduce = async_grad_allreduce
+        ctx.use_zbv = use_zbv
+
+        output = torch.matmul(input_, weight)
+        if bias is not None:
+            output = output + bias
+
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, weight, bias = ctx.saved_tensors
+        use_bias = ctx.use_bias
+        use_zbv = ctx.use_zbv
+
+        # In order to be hooked into Gemini's '__torch_function__', adding a view operation to weight and bias.
+        weight_origin = weight
+        weight = weight.view(weight.shape)
+        if bias is not None:
+            bias = bias.view(bias.shape)
+
+        total_input = input
+        grad_input = grad_output.matmul(weight.T)
+        grad_output = grad_output.contiguous()
+        # Convert the tensor shapes to 2D for execution compatibility
+        if len(grad_output.shape) > 2:
+            grad_output = grad_output.view(-1, grad_output.shape[-1])
+            total_input = total_input.view(-1, total_input.shape[-1])
+
+        # split dx & dw
+        if _grad_accum_fusion_available and weight.grad is not None:
+            grad = weight.grad
+
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    (weight, weight_origin),
+                    functools.partial(
+                        execute_conv1d_w_pass_grad_accum,
+                    ),
+                )
+                grad_weight = None
+            else:
+                if grad.dtype == torch.float32:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+                    grad_weight = None
+                elif grad.dtype == torch.float16:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+                    grad_weight = None
+                else:
+                    grad_weight = total_input.t().matmul(grad_output)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    (weight, weight_origin),
+                    functools.partial(
+                        execute_conv1d_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
+                grad_weight = None
+            else:
+                grad_weight = total_input.t().matmul(grad_output)
+
+        grad_bias = grad_output.sum(dim=0) if use_bias else None
+
+        return grad_input, grad_weight, grad_bias, None, None, None, None
 
 
 class LinearWithAsyncCommunication(torch.autograd.Function):
@@ -111,11 +254,13 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, weight, bias, process_group, async_grad_allreduce):
+    def forward(ctx, input_, weight, bias, process_group, async_grad_allreduce, fp8_communication=False, use_zbv=False):
         ctx.save_for_backward(input_, weight, bias)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
         ctx.async_grad_allreduce = async_grad_allreduce
+        ctx.fp8_communication = fp8_communication
+        ctx.use_zbv = use_zbv
         if bias is not None:
             output = F.linear(input_, weight, bias)
         else:
@@ -127,6 +272,8 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
     def backward(ctx, grad_output):
         input, weight, bias = ctx.saved_tensors
         use_bias = ctx.use_bias
+        fp8_communication = ctx.fp8_communication
+        use_zbv = ctx.use_zbv
 
         # In order to be hooked into Gemini's '__torch_function__', adding a view operation to bias.
         if use_bias:
@@ -142,29 +289,130 @@ class LinearWithAsyncCommunication(torch.autograd.Function):
 
         if ctx.async_grad_allreduce:
             # Asynchronous all-reduce
-            handle = dist.all_reduce(grad_input, group=ctx.process_group, async_op=True)
+            if fp8_communication:
+                all_reduce_fp8(grad_input, group=ctx.process_group)
+            else:
+                handle = dist.all_reduce(grad_input, group=ctx.process_group, async_op=True)
             # Relay on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
             # all-reduce scheduled first and have GPU resources allocated, CUDA_DEVICE_MAX_CONNECTIONS=1 is set in shardformer.py
-
         if _grad_accum_fusion_available and weight.grad is not None:
             grad = weight.grad
-            if grad.dtype == torch.float32:
-                fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass_grad_accum,
+                    ),
+                )
                 grad_weight = None
-            elif grad.dtype == torch.float16:
-                fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+            else:
+                if grad.dtype == torch.float32:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+                    grad_weight = None
+                elif grad.dtype == torch.float16:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+                    grad_weight = None
+                else:
+                    grad_weight = grad_output.t().matmul(total_input)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
                 grad_weight = None
             else:
                 grad_weight = grad_output.t().matmul(total_input)
-        else:
-            grad_weight = grad_output.t().matmul(total_input)
 
         grad_bias = grad_output.sum(dim=0) if use_bias else None
 
-        if ctx.async_grad_allreduce:
+        if ctx.async_grad_allreduce and not fp8_communication:
             handle.wait()
+        return grad_input, grad_weight, grad_bias, None, None, None, None
 
-        return grad_input, grad_weight, grad_bias, None, None, None
+
+class LinearWithGradAccum(torch.autograd.Function):
+    """
+    Linear layer baseline (no tensor parallel version).
+    """
+
+    @staticmethod
+    def forward(ctx, input_, weight, bias, async_grad_allreduce, use_zbv=False):
+        ctx.save_for_backward(input_, weight, bias)
+        ctx.use_bias = bias is not None
+        ctx.async_grad_allreduce = async_grad_allreduce
+        ctx.use_zbv = use_zbv
+        if bias is not None:
+            output = F.linear(input_, weight, bias)
+        else:
+            output = F.linear(input_, weight)
+
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, weight, bias = ctx.saved_tensors
+        use_bias = ctx.use_bias
+        use_zbv = ctx.use_zbv
+
+        # In order to be hooked into Gemini's '__torch_function__', adding a view operation to bias.
+        if use_bias:
+            bias.view(bias.shape)
+
+        total_input = input.contiguous()
+        grad_input = grad_output.matmul(weight)
+        grad_output = grad_output.contiguous()
+        # Convert the tensor shapes to 2D for execution compatibility
+        if len(grad_output.shape) > 2:
+            grad_output = grad_output.view(-1, grad_output.shape[-1])
+            total_input = total_input.view(-1, total_input.shape[-1])
+
+        if _grad_accum_fusion_available and weight.grad is not None:
+            grad = weight.grad
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass_grad_accum,
+                    ),
+                )
+                grad_weight = None
+            else:
+                if grad.dtype == torch.float32:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+                    grad_weight = None
+                elif grad.dtype == torch.float16:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+                    grad_weight = None
+                else:
+                    grad_weight = grad_output.t().matmul(total_input)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
+                grad_weight = None
+            else:
+                grad_weight = grad_output.t().matmul(total_input)
+
+        grad_bias = grad_output.sum(dim=0) if use_bias else None
+
+        return grad_input, grad_weight, grad_bias, None, None, None, None
 
 
 def _ring_as_gather(func, input_to_gather=None, input_local=None, process_group=None, gather_dim=1, keep_item=False):
@@ -197,10 +445,12 @@ def _ring_as_gather(func, input_to_gather=None, input_local=None, process_group=
         for k in recv_tensors:
             send_tensors[k], recv_tensors[k] = recv_tensors[k], send_tensors[k]
 
+    input_tensors = []
     output_tensors = []
 
     handles = communicate_step()
     # first round: special case, retrive from local tensor
+    input_tensors.append(input_to_gather)
     output_tensors.append(func(**input_to_gather, **input_local))
     for i in range(group_size - 2):
         for handle in handles:
@@ -211,14 +461,25 @@ def _ring_as_gather(func, input_to_gather=None, input_local=None, process_group=
         handles = communicate_step()
 
         # actual computation
+        input_tensors.append(send_tensors)
         output_tensors.append(func(**send_tensors, **input_local))
 
     # final round: special case, no need to send/recv again
     for handle in handles:
         handle.wait()
+    input_tensors.append(send_tensors)
     output_tensors.append(func(**recv_tensors, **input_local))
 
-    return torch.cat(output_tensors[group_size - cur_rank :] + output_tensors[: group_size - cur_rank], dim=gather_dim)
+    gathered_input = {}
+    for k in input_to_gather:
+        input_shards = [d[k] for d in input_tensors[group_size - cur_rank :] + input_tensors[: group_size - cur_rank]]
+        gathered_input[k] = torch.cat(input_shards, dim=gather_dim)
+
+    gathered_output = torch.cat(
+        output_tensors[group_size - cur_rank :] + output_tensors[: group_size - cur_rank], dim=gather_dim
+    )
+
+    return gathered_output, gathered_input
 
 
 class _GatherForwardReduceScatterBackward(torch.autograd.Function):
@@ -232,17 +493,18 @@ class _GatherForwardReduceScatterBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, process_group, dim):
+    def forward(ctx, input_, process_group, dim, fp8_communication=False):
         ctx.process_group = process_group
         ctx.dim = dim
+        ctx.fp8_communication = fp8_communication
 
-        return _gather(input_, dim, process_group)
+        return _gather(input_, dim, process_group, fp8_communication, fp8_format="e4m3")
 
     @staticmethod
     def backward(ctx, grad_output):
         dim = ctx.dim
         process_group = ctx.process_group
-
+        fp8_communication = ctx.fp8_communication
         # do reduce-scatter
         new_shape = list(grad_output.shape)
         assert (
@@ -253,9 +515,13 @@ class _GatherForwardReduceScatterBackward(torch.autograd.Function):
             item.contiguous() for item in torch.chunk(grad_output, dist.get_world_size(process_group), dim=dim)
         ]
         output = torch.empty(new_shape, dtype=grad_output.dtype, device=grad_output.device)
-        dist.reduce_scatter(output, grad_list, group=process_group)
 
-        return output, None, None
+        if fp8_communication:
+            reduce_scatter_fp8(output, grad_list, group=process_group, fp8_format="e5m2")
+        else:
+            dist.reduce_scatter(output, grad_list, group=process_group)
+
+        return output, None, None, None
 
 
 class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
@@ -269,29 +535,31 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap=True, ring=False):
+    def forward(ctx, input_, weight, bias, process_group, async_grad_reduce_scatter, dim, ring=False, use_zbv=False):
         ctx.save_for_backward(input_, weight, bias)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
         ctx.async_grad_reduce_scatter = async_grad_reduce_scatter
         ctx.dim = dim
-        ctx.overlap = overlap
+        ctx.use_zbv = use_zbv
 
         if ring is True:
             input_to_gather = {"input": input_}
             input_local = {"weight": weight}
 
-            output = _ring_as_gather(
+            output, input_dict = _ring_as_gather(
                 F.linear,
                 input_to_gather=input_to_gather,
                 input_local=input_local,
                 process_group=process_group,
             )
+            ctx.gathered_input = input_dict["input"]
 
             if bias is not None:
                 output += bias
         else:
             input_parallel = _gather(input_, dim, process_group)
+            ctx.gathered_input = input_parallel
             if bias is not None:
                 output = F.linear(input_parallel, weight, bias)
             else:
@@ -305,37 +573,45 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
         use_bias = ctx.use_bias
         dim = ctx.dim
         process_group = ctx.process_group
-        overlap = ctx.overlap
+        use_zbv = ctx.use_zbv
 
         # In order to be hooked into Gemini's '__torch_function__', adding a view operation to weight and bias. Used in FusedLayerNorm
         if use_bias:
             bias = bias.view(bias.shape)
 
-        if not overlap:
-            input_parallel = _gather(input_, dim, process_group)
+        input_parallel = ctx.gathered_input
 
-            total_input = input_parallel
-            grad_input = grad_output.matmul(weight)
-            grad_output = grad_output.contiguous()
-            # Convert the tensor shapes to 2D for execution compatibility
-            if len(grad_output.shape) > 2:
-                grad_output = grad_output.view(-1, grad_output.shape[-1])
-                total_input = total_input.view(-1, total_input.shape[-1])
+        total_input = input_parallel
+        grad_input = grad_output.matmul(weight)
+        grad_output = grad_output.contiguous()
+        # Convert the tensor shapes to 2D for execution compatibility
+        if len(grad_output.shape) > 2:
+            grad_output = grad_output.view(-1, grad_output.shape[-1])
+            total_input = total_input.view(-1, total_input.shape[-1])
 
-            if ctx.async_grad_reduce_scatter:
-                # Asynchronous reduce-scatter
-                input_list = [
-                    item.contiguous() for item in torch.chunk(grad_input, dist.get_world_size(process_group), dim=dim)
-                ]
-                output = torch.empty(
-                    input_.shape, dtype=input_parallel.dtype, device=input_parallel.device
-                ).contiguous()
-                handle = dist.reduce_scatter(output, input_list, group=process_group, async_op=True)
-                # Relay on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
-                # all-reduce scheduled first and have GPU resources allocated, CUDA_DEVICE_MAX_CONNECTIONS=1 is set in shardformer.py
+        if ctx.async_grad_reduce_scatter:
+            # Asynchronous reduce-scatter
+            input_list = [
+                item.contiguous() for item in torch.chunk(grad_input, dist.get_world_size(process_group), dim=dim)
+            ]
+            output = torch.empty(input_.shape, dtype=input_parallel.dtype, device=input_parallel.device).contiguous()
+            handle = dist.reduce_scatter(output, input_list, group=process_group, async_op=True)
+            # Rely on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
+            # all-reduce scheduled first and have GPU resources allocated, CUDA_DEVICE_MAX_CONNECTIONS=1 is set in shardformer.py
 
-            if _grad_accum_fusion_available and weight.grad is not None:
-                grad = weight.grad
+        if _grad_accum_fusion_available and weight.grad is not None:
+            grad = weight.grad
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass_grad_accum,
+                    ),
+                )
+                grad_weight = None
+            else:
                 if grad.dtype == torch.float32:
                     fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
                     grad_weight = None
@@ -344,59 +620,25 @@ class _LinearWithGatherForwardReduceScatterBackward(torch.autograd.Function):
                     grad_weight = None
                 else:
                     grad_weight = grad_output.t().matmul(total_input)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
+                grad_weight = None
             else:
                 grad_weight = grad_output.t().matmul(total_input)
 
-            grad_bias = grad_output.sum(dim=0) if use_bias else None
+        grad_bias = grad_output.sum(dim=0) if use_bias else None
 
-            if ctx.async_grad_reduce_scatter:
-                handle.wait()
-
-        else:
-            input_ = input_.contiguous()
-            world_size = dist.get_world_size(process_group)
-            tensor_list = [torch.empty_like(input_) for _ in range(world_size)]
-
-            # do all gather in is async way
-            gather_handle = dist.all_gather(tensor_list, input_, group=process_group, async_op=True)
-            # calculate gradient and prepare data asynchronously with all-gather
-            # calculate
-            grad_input = grad_output.matmul(weight)
-            grad_output = grad_output.contiguous()
-            # Convert the tensor shapes to 2D for execution compatibility
-            if len(grad_output.shape) > 2:
-                grad_output = grad_output.view(-1, grad_output.shape[-1])
-            grad_bias = grad_output.sum(dim=0) if use_bias else None
-            # prepare data
-            input_list = [
-                item.contiguous() for item in torch.chunk(grad_input, dist.get_world_size(process_group), dim=dim)
-            ]
-            output = torch.empty(input_.shape, dtype=input_.dtype, device=input_.device).contiguous()
-            # wait until all-gather finished
-            gather_handle.wait()
-
-            # do reduce-scatter in async way
-            reducescatter_handle = dist.reduce_scatter(output, input_list, group=process_group, async_op=True)
-            input_parallel = torch.cat(tensor_list, dim=dim).contiguous()
-            # calculate gradient
-            if len(input_parallel.shape) > 2:
-                input_parallel = input_parallel.view(-1, input_parallel.shape[-1])
-
-            if _grad_accum_fusion_available and weight.grad is not None:
-                grad = weight.grad
-                if grad.dtype == torch.float32:
-                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(input_parallel, grad_output, grad)
-                    grad_weight = None
-                elif grad.dtype == torch.float16:
-                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(input_parallel, grad_output, grad)
-                    grad_weight = None
-                else:
-                    grad_weight = grad_output.t().matmul(input_parallel)
-            else:
-                grad_weight = grad_output.t().matmul(input_parallel)
-            # grad_weight = grad_output.t().matmul(input_parallel)
-            # wait until reduce-scatter finished
-            reducescatter_handle.wait()
+        if ctx.async_grad_reduce_scatter:
+            handle.wait()
 
         return output, grad_weight, grad_bias, None, None, None, None, None
 
@@ -470,11 +712,12 @@ class _LinearWithReduceScatterForwardGatherBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, weight, bias, process_group, dim, ring):
+    def forward(ctx, input_, weight, bias, process_group, dim, ring, use_zbv=False):
         ctx.save_for_backward(input_, weight, bias)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
         ctx.dim = dim
+        ctx.use_zbv = use_zbv
 
         if ring is True:
             input_to_reducescatter = {"input": input_}
@@ -515,7 +758,7 @@ class _LinearWithReduceScatterForwardGatherBackward(torch.autograd.Function):
         use_bias = ctx.use_bias
         dim = ctx.dim
         process_group = ctx.process_group
-
+        use_zbv = ctx.use_zbv
         # In order to be hooked into Gemini's '__torch_function__', adding a view operation to weight and bias. Used in FusedLayerNorm
         if use_bias:
             bias = bias.view(bias.shape)
@@ -529,11 +772,48 @@ class _LinearWithReduceScatterForwardGatherBackward(torch.autograd.Function):
         # Convert the tensor shapes to 2D for execution compatibility
         if len(grad_output.shape) > 2:
             grad_output = grad_output.view(-1, grad_output.shape[-1])
-            total_input = total_input.view(-1, total_input.shape[-1])
-        grad_weight = grad_output.t().matmul(total_input)
+            total_input = total_input.reshape(-1, total_input.shape[-1])
+
+        if _grad_accum_fusion_available and weight.grad is not None:
+            grad = weight.grad
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass_grad_accum,
+                    ),
+                )
+                grad_weight = None
+            else:
+                if grad.dtype == torch.float32:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+                    grad_weight = None
+                elif grad.dtype == torch.float16:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+                    grad_weight = None
+                else:
+                    grad_weight = grad_output.t().matmul(total_input)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    weight,
+                    functools.partial(
+                        execute_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
+                grad_weight = None
+            else:
+                grad_weight = grad_output.t().matmul(total_input)
+
+        # grad_weight = grad_output.t().matmul(total_input)
         grad_bias = grad_output.sum(dim=0) if use_bias else None
 
-        return grad_input, grad_weight, grad_bias, None, None, None
+        return grad_input, grad_weight, grad_bias, None, None, None, None
 
 
 class _ReduceScatterForwardGatherBackward(torch.autograd.Function):
@@ -546,9 +826,10 @@ class _ReduceScatterForwardGatherBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, process_group, dim):
+    def forward(ctx, input_, process_group, dim, fp8_communication=False):
         ctx.dim = dim
         ctx.process_group = process_group
+        ctx.fp8_communication = fp8_communication
 
         # do reduce-scatter
         new_shape = list(input_.shape)
@@ -558,7 +839,10 @@ class _ReduceScatterForwardGatherBackward(torch.autograd.Function):
         new_shape[dim] = new_shape[dim] // dist.get_world_size(process_group)
         input_list = [item.contiguous() for item in torch.chunk(input_, dist.get_world_size(process_group), dim=dim)]
         output = torch.empty(new_shape, dtype=input_.dtype, device=input_.device)
-        dist.reduce_scatter(output, input_list, group=process_group)
+        if fp8_communication:
+            reduce_scatter_fp8(output, input_list, group=process_group, fp8_format="e4m3")
+        else:
+            dist.reduce_scatter(output, input_list, group=process_group)
 
         return output
 
@@ -566,8 +850,9 @@ class _ReduceScatterForwardGatherBackward(torch.autograd.Function):
     def backward(ctx, grad_output):
         dim = ctx.dim
         process_group = ctx.process_group
+        fp8_communication = ctx.fp8_communication
 
-        return _gather(grad_output, dim, process_group), None, None
+        return _gather(grad_output, dim, process_group, fp8_communication, fp8_format="e5m2"), None, None, None
 
 
 class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
@@ -582,31 +867,33 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap, ring):
+    def forward(
+        ctx, input_, weight, bias, process_group, async_grad_reduce_scatter, dim, ring, fp8_communication, use_zbv=False
+    ):
         ctx.save_for_backward(input_, weight, bias)
         ctx.use_bias = bias is not None
         ctx.process_group = process_group
         ctx.async_grad_reduce_scatter = async_grad_reduce_scatter
         ctx.dim = dim
-        ctx.overlap = overlap
+        ctx.fp8_communication = fp8_communication
+        ctx.use_zbv = use_zbv
 
         if ring is True:
-            input_to_gather = {}
-            input_local = {}
-            input_to_gather["input"] = input_
-            input_local["other"] = weight
+            input_to_gather = {"input": input_}
+            input_local = {"other": weight}
 
-            output = _ring_as_gather(
+            output, input_dict = _ring_as_gather(
                 torch.matmul,
                 input_to_gather=input_to_gather,
                 input_local=input_local,
                 process_group=process_group,
                 gather_dim=dim,
             )
+            ctx.gathered_input = input_dict["input"]
 
         else:
-            input_parallel = _gather(input_, dim, process_group)
-
+            input_parallel = _gather(input_, dim, process_group, fp8_communication, fp8_format="e4m3")
+            ctx.gathered_input = input_parallel
             output = torch.matmul(input_parallel, weight)
 
         if bias is not None:
@@ -619,75 +906,77 @@ class _MatmulWithGatherForwardReduceScatterBackward(torch.autograd.Function):
         use_bias = ctx.use_bias
         dim = ctx.dim
         process_group = ctx.process_group
-        overlap = ctx.overlap
+        use_zbv = ctx.use_zbv
 
         # In order to be hooked into Gemini's '__torch_function__', adding a view operation to weight and bias. Used in FusedLayerNorm
+        weight_origin = weight
         weight = weight.view(weight.shape)
         if use_bias:
             bias = bias.view(bias.shape)
 
-        if not overlap:
-            input_parallel = _gather(input_, dim, process_group)
+        input_parallel = ctx.gathered_input
 
-            total_input = input_parallel
-            grad_input = grad_output.matmul(weight.T)
-            grad_output = grad_output.contiguous()
-            # Convert the tensor shapes to 2D for execution compatibility
-            if len(grad_output.shape) > 2:
-                grad_output = grad_output.view(-1, grad_output.shape[-1])
-                total_input = total_input.view(-1, total_input.shape[-1])
+        total_input = input_parallel
+        grad_input = grad_output.matmul(weight.T)
+        grad_output = grad_output.contiguous()
+        # Convert the tensor shapes to 2D for execution compatibility
+        if len(grad_output.shape) > 2:
+            grad_output = grad_output.view(-1, grad_output.shape[-1])
+            total_input = total_input.view(-1, total_input.shape[-1])
 
-            if ctx.async_grad_reduce_scatter:
-                # Asynchronous reduce-scatter
-                input_list = [
-                    item.contiguous() for item in torch.chunk(grad_input, dist.get_world_size(process_group), dim=dim)
-                ]
-                output = torch.empty(
-                    input_.shape, dtype=input_parallel.dtype, device=input_parallel.device
-                ).contiguous()
-                handle = dist.reduce_scatter(output, input_list, group=process_group, async_op=True)
-                # Relay on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
-                # all-reduce scheduled first and have GPU resources allocated, CUDA_DEVICE_MAX_CONNECTIONS=1 is set in shardformer.py
-
-            grad_weight = total_input.t().matmul(grad_output)
-            grad_bias = grad_output.sum(dim=0) if use_bias else None
-
-            if ctx.async_grad_reduce_scatter:
-                handle.wait()
-
-        else:
-            world_size = dist.get_world_size(process_group)
-            tensor_list = [torch.empty_like(input_) for _ in range(world_size)]
-
-            # do all gather in is async way
-            gather_handle = dist.all_gather(tensor_list, input_, group=process_group, async_op=True)
-            # calculate gradient and prepare data asynchronously with all-gather
-            # calculate
-            grad_input = grad_output.matmul(weight.T)
-            grad_output = grad_output.contiguous()
-            # Convert the tensor shapes to 2D for execution compatibility
-            if len(grad_output.shape) > 2:
-                grad_output = grad_output.view(-1, grad_output.shape[-1])
-            grad_bias = grad_output.sum(dim=0) if use_bias else None
-            # prepare data
+        if ctx.async_grad_reduce_scatter:
+            # Asynchronous reduce-scatter
             input_list = [
                 item.contiguous() for item in torch.chunk(grad_input, dist.get_world_size(process_group), dim=dim)
             ]
-            output = torch.empty(input_.shape, dtype=input_.dtype, device=input_.device).contiguous()
-            # wait until all-gather finished
-            gather_handle.wait()
+            output = torch.empty(input_.shape, dtype=input_parallel.dtype, device=input_parallel.device).contiguous()
+            handle = dist.reduce_scatter(output, input_list, group=process_group, async_op=True)
+            # Rely on CUDA_DEVICE_MAX_CONNECTIONS=1 to have
+            # all-reduce scheduled first and have GPU resources allocated
 
-            # do reduce-scatter in async way
-            reducescatter_handle = dist.reduce_scatter(output, input_list, group=process_group, async_op=True)
-            input_parallel = torch.cat(tensor_list, dim=dim).contiguous()
-            # calculate gradient
-            if len(input_parallel.shape) > 2:
-                input_parallel = input_parallel.view(-1, input_parallel.shape[-1])
-            grad_weight = input_parallel.t().matmul(grad_output)
-            # wait until reduce-scatter finished
-            reducescatter_handle.wait()
+        # split dx & dw
+        if _grad_accum_fusion_available and weight.grad is not None:
+            grad = weight.grad
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    (weight, weight_origin),
+                    functools.partial(
+                        execute_conv1d_w_pass_grad_accum,
+                    ),
+                )
+                grad_weight = None
+            else:
+                if grad.dtype == torch.float32:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp32(total_input, grad_output, grad)
+                    grad_weight = None
+                elif grad.dtype == torch.float16:
+                    fused_weight_gradient_mlp_cuda.wgrad_gemm_accum_fp16(total_input, grad_output, grad)
+                    grad_weight = None
+                else:
+                    grad_weight = total_input.t().matmul(grad_output)
+        else:
+            if use_zbv:
+                WeightGradStore.put(
+                    total_input,
+                    grad_output,
+                    (weight, weight_origin),
+                    functools.partial(
+                        execute_conv1d_w_pass,
+                        wgrad_gemm_func=torch.matmul,
+                    ),
+                )
+                grad_weight = None
+            else:
+                grad_weight = total_input.t().matmul(grad_output)
 
-        return output, grad_weight, grad_bias, None, None, None, None, None
+        grad_bias = grad_output.sum(dim=0) if use_bias else None
+
+        if ctx.async_grad_reduce_scatter:
+            handle.wait()
+
+        return output, grad_weight, grad_bias, None, None, None, None, None, None
 
 
 class _SplitForwardGatherBackward(torch.autograd.Function):
@@ -702,17 +991,25 @@ class _SplitForwardGatherBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, dim, process_group, grad_scale=None):
+    def forward(ctx, input_, dim, process_group, grad_scale=None, fp8_communication=False):
         ctx.process_group = process_group
         ctx.dim = dim
         ctx.grad_scale = grad_scale
+        ctx.fp8_communication = fp8_communication
         return _split(input_, dim, process_group)
 
     @staticmethod
     def backward(ctx, grad_output):
         if ctx.grad_scale is not None:
             grad_output = grad_output * ctx.grad_scale
-        return _gather(grad_output, ctx.dim, ctx.process_group), None, None, None
+
+        return (
+            _gather(grad_output, ctx.dim, ctx.process_group, ctx.fp8_communication, fp8_format="e5m2"),
+            None,
+            None,
+            None,
+            None,
+        )
 
 
 class _ReduceForward(torch.autograd.Function):
@@ -721,16 +1018,20 @@ class _ReduceForward(torch.autograd.Function):
 
     Args:
         input_: input matrix.
-        parallel_mode: parallel mode.
+        process_group: communication group.
+
     """
 
     @staticmethod
-    def forward(ctx, input_, process_group):
-        return _reduce(input_, process_group)
+    def forward(ctx, input_, process_group, grad_scale=None, fp8_communication=False):
+        ctx.grad_scale = grad_scale
+        return _reduce(input_, process_group, fp8_communication, fp8_format="e4m3")
 
     @staticmethod
     def backward(ctx, grad_output):
-        return grad_output, None
+        if ctx.grad_scale is not None:
+            grad_output = grad_output * ctx.grad_scale
+        return grad_output, None, None, None
 
 
 class _ReduceBackward(torch.autograd.Function):
@@ -743,13 +1044,15 @@ class _ReduceBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, process_group):
+    def forward(ctx, input_, process_group, fp8_communication=False):
         ctx.process_group = process_group
+        ctx.fp8_communication = fp8_communication
         return input_
 
     @staticmethod
     def backward(ctx, grad_output):
-        return _reduce(grad_output, ctx.process_group), None
+        fp8_communication = ctx.fp8_communication
+        return _reduce(grad_output, ctx.process_group, fp8_communication, fp8_format="e5m2"), None, None
 
 
 class _GatherForwardSplitBackward(torch.autograd.Function):
@@ -762,17 +1065,18 @@ class _GatherForwardSplitBackward(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, dim, process_group, grad_scale=None):
+    def forward(ctx, input_, dim, process_group, grad_scale=None, fp8_communication=False):
         ctx.process_group = process_group
         ctx.dim = dim
         ctx.grad_scale = grad_scale
-        return _gather(input_, dim, process_group)
+
+        return _gather(input_, dim, process_group, fp8_communication=fp8_communication, fp8_format="e4m3")
 
     @staticmethod
     def backward(ctx, grad_output):
         if ctx.grad_scale is not None:
             grad_output = grad_output * ctx.grad_scale
-        return _split(grad_output, ctx.dim, ctx.process_group), None, None, None
+        return _split(grad_output, ctx.dim, ctx.process_group), None, None, None, None
 
 
 class _AllToAll(torch.autograd.Function):
@@ -786,26 +1090,67 @@ class _AllToAll(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, input_, process_group, scatter_dim, gather_dim):
+    def forward(ctx, input_, process_group, scatter_dim, gather_dim, fp8_communication=False):
         ctx.process_group = process_group
         ctx.scatter_dim = scatter_dim
         ctx.gather_dim = gather_dim
+        ctx.fp8_communication = fp8_communication
         world_size = dist.get_world_size(process_group)
-        bsz, _, _ = input_.shape
+        bsz = input_.shape[0]
 
         # using all_to_all_single when batch size is 1
         if bsz == 1:
-            return _all_to_all_single(input_, world_size, process_group, scatter_dim, gather_dim)
+            return _all_to_all_single(
+                input_,
+                world_size,
+                process_group,
+                scatter_dim,
+                gather_dim,
+                fp8_communication=fp8_communication,
+                fp8_format="e4m3",
+            )
         else:
-            return _all_to_all(input_, world_size, process_group, scatter_dim, gather_dim)
+            return _all_to_all(
+                input_,
+                world_size,
+                process_group,
+                scatter_dim,
+                gather_dim,
+                fp8_communication=fp8_communication,
+                fp8_format="e4m3",
+            )
 
     @staticmethod
-    def backward(ctx, *grad_output):
+    def backward(ctx, grad_output):
         process_group = ctx.process_group
         scatter_dim = ctx.gather_dim
         gather_dim = ctx.scatter_dim
-        return_grad = _AllToAll.apply(*grad_output, process_group, scatter_dim, gather_dim)
-        return (return_grad, None, None, None)
+        fp8_communication = ctx.fp8_communication
+        world_size = dist.get_world_size(process_group)
+        bsz = grad_output.shape[0]
+
+        if bsz == 1:
+            return_grad = _all_to_all_single(
+                grad_output,
+                world_size,
+                process_group,
+                scatter_dim,
+                gather_dim,
+                fp8_communication=fp8_communication,
+                fp8_format="e5m2",
+            )
+        else:
+            return_grad = _all_to_all(
+                grad_output,
+                world_size,
+                process_group,
+                scatter_dim,
+                gather_dim,
+                fp8_communication=fp8_communication,
+                fp8_format="e5m2",
+            )
+
+        return (return_grad, None, None, None, None)
 
 
 class HookParameter(torch.autograd.Function):
@@ -831,12 +1176,15 @@ def hook_parameter_in_backward(input, weight=None, bias=None):
     return HookParameter.apply(input, weight, bias)
 
 
-def _reduce(input_, process_group):
+def _reduce(input_, process_group, fp8_communication=False, fp8_format="e5m2"):
     # skip if only one rank involved
     if dist.get_world_size(process_group) == 1:
         return input_
     else:
-        dist.all_reduce(input_, group=process_group)
+        if fp8_communication:
+            all_reduce_fp8(input_, group=process_group, fp8_format=fp8_format)
+        else:
+            dist.all_reduce(input_, group=process_group)
         return input_
 
 
@@ -860,18 +1208,19 @@ def _split(input_, dim=-1, process_group=None):
     return output
 
 
-def _gather(input_, dim=-1, process_group=None):
+def _gather(input_, dim=-1, process_group=None, fp8_communication=False, fp8_format="e5m2"):
     # skip if only one rank involved
     world_size = dist.get_world_size(process_group)
     if world_size == 1:
         return input_
 
-    # all gather
     input_ = input_.contiguous()
     tensor_list = [torch.empty_like(input_) for _ in range(world_size)]
-    torch.distributed.all_gather(tensor_list, input_, group=process_group)
+    if fp8_communication:
+        all_gather_fp8(tensor_list, input_, fp8_format=fp8_format, group=process_group)
+    else:
+        dist.all_gather(tensor_list, input_, group=process_group)
 
-    # concat
     output = torch.cat(tensor_list, dim=dim).contiguous()
 
     return output
@@ -901,14 +1250,19 @@ def _reduce_scatter(input_, dim=1, process_group=None):
     return output
 
 
-def _all_to_all(input_, world_size, group, scatter_dim, gather_dim):
+def _all_to_all(input_, world_size, group, scatter_dim, gather_dim, fp8_communication=False, fp8_format="e5m2"):
     input_list = [t.contiguous() for t in torch.tensor_split(input_, world_size, scatter_dim)]
     output_list = [torch.empty_like(input_list[0]) for _ in range(world_size)]
-    dist.all_to_all(output_list, input_list, group=group)
+    if fp8_communication:
+        all_to_all_fp8(output_list, input_list, group=group, fp8_format=fp8_format)
+    else:
+        dist.all_to_all(output_list, input_list, group=group)
     return torch.cat(output_list, dim=gather_dim).contiguous()
 
 
-def _all_to_all_single(input_, seq_world_size, group, scatter_dim, gather_dim):
+def _all_to_all_single(
+    input_, seq_world_size, group, scatter_dim, gather_dim, fp8_communication=False, fp8_format="e5m2"
+):
     inp_shape = list(input_.shape)
     inp_shape[scatter_dim] = inp_shape[scatter_dim] // seq_world_size
     if scatter_dim < 2:
@@ -921,7 +1275,11 @@ def _all_to_all_single(input_, seq_world_size, group, scatter_dim, gather_dim):
         )
 
     output = torch.empty_like(input_t)
-    dist.all_to_all_single(output, input_t, group=group)
+    if fp8_communication:
+        all_to_all_single_fp8(output, input_t, group=group, fp8_format=fp8_format)
+    else:
+
+        dist.all_to_all_single(output, input_t, group=group)
 
     if scatter_dim < 2:
         output = output.transpose(0, 1).contiguous()
@@ -935,57 +1293,101 @@ def _all_to_all_single(input_, seq_world_size, group, scatter_dim, gather_dim):
     ).contiguous()
 
 
-def matmul_with_async_comm(input_, weight, bias, process_group, async_grad_allreduce):
-    return MatmulWithAsyncCommunication.apply(input_, weight, bias, process_group, async_grad_allreduce)
+def matmul_with_async_comm(
+    input_, weight, bias, process_group, async_grad_allreduce, fp8_communication=False, use_zbv=False
+):
+    return MatmulWithAsyncCommunication.apply(
+        input_, weight, bias, process_group, async_grad_allreduce, fp8_communication, use_zbv
+    )
 
 
-def linear_with_async_comm(input_, weight, bias, process_group, async_grad_allreduce):
-    return LinearWithAsyncCommunication.apply(input_, weight, bias, process_group, async_grad_allreduce)
+def matmul_with_grad_comm(input_, weight, bias, async_grad_allreduce, use_zbv=False):
+    return MatmulWithGradAccum.apply(input_, weight, bias, async_grad_allreduce, use_zbv)
+
+
+def linear_with_async_comm(
+    input_, weight, bias, process_group, async_grad_allreduce, fp8_communication=False, use_zbv=False
+):
+    return LinearWithAsyncCommunication.apply(
+        input_, weight, bias, process_group, async_grad_allreduce, fp8_communication, use_zbv
+    )
+
+
+def linear_with_grad_accum(input_, weight, bias, async_grad_allreduce, use_zbv=False):
+    return LinearWithGradAccum.apply(input_, weight, bias, async_grad_allreduce, use_zbv)
 
 
 def linear_gather_forward_reducescatter_backward(
-    input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap, ring=False
+    input_, weight, bias, process_group, async_grad_reduce_scatter, dim, ring=False, use_zbv=False
 ):
     return _LinearWithGatherForwardReduceScatterBackward.apply(
-        input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap, ring
+        input_, weight, bias, process_group, async_grad_reduce_scatter, dim, ring, use_zbv
     )
 
 
-def gather_forward_reducescatter_backward(input_, process_group, dim):
-    return _GatherForwardReduceScatterBackward.apply(input_, process_group, dim)
+def gather_forward_reducescatter_backward(input_, process_group, dim, fp8_communication=False):
+    return _GatherForwardReduceScatterBackward.apply(input_, process_group, dim, fp8_communication)
 
 
-def reducescatter_forward_gather_backward(input_, process_group, dim):
-    return _ReduceScatterForwardGatherBackward.apply(input_, process_group, dim)
+def reducescatter_forward_gather_backward(input_, process_group, dim, fp8_communication=False):
+    return _ReduceScatterForwardGatherBackward.apply(input_, process_group, dim, fp8_communication)
 
 
-def linear_reducescatter_forward_gather_backward(input_, weight, bias=None, process_group=None, dim=1, ring=False):
-    return _LinearWithReduceScatterForwardGatherBackward.apply(input_, weight, bias, process_group, dim, ring)
+def linear_reducescatter_forward_gather_backward(
+    input_, weight, bias=None, process_group=None, dim=1, ring=False, use_zbv=False
+):
+    return _LinearWithReduceScatterForwardGatherBackward.apply(input_, weight, bias, process_group, dim, ring, use_zbv)
 
 
 def matmul_gather_forward_reducescatter_backward(
-    input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap, ring=False
+    input_,
+    weight,
+    bias,
+    process_group,
+    async_grad_reduce_scatter,
+    dim,
+    ring=False,
+    fp8_communication=False,
+    use_zbv=False,
 ):
     return _MatmulWithGatherForwardReduceScatterBackward.apply(
-        input_, weight, bias, process_group, async_grad_reduce_scatter, dim, overlap, ring
+        input_, weight, bias, process_group, async_grad_reduce_scatter, dim, ring, fp8_communication, use_zbv
     )
 
 
-def gather_forward_split_backward(input_, dim, process_group, grad_scale=None):
-    return _GatherForwardSplitBackward.apply(input_, dim, process_group, grad_scale)
+def gather_forward_split_backward(input_, dim, process_group, grad_scale=None, fp8_communication=False):
+    return _GatherForwardSplitBackward.apply(input_, dim, process_group, grad_scale, fp8_communication)
 
 
-def split_forward_gather_backward(input_, dim, process_group, grad_scale=None):
-    return _SplitForwardGatherBackward.apply(input_, dim, process_group, grad_scale)
+def split_forward_gather_backward(input_, dim, process_group, grad_scale=None, fp8_communication=False):
+    return _SplitForwardGatherBackward.apply(input_, dim, process_group, grad_scale, fp8_communication)
 
 
-def reduce_forward(input_, process_group):
-    return _ReduceForward.apply(input_, process_group)
+def reduce_forward(input_, process_group, grad_scale=None, fp8_communication=False):
+    return _ReduceForward.apply(input_, process_group, grad_scale, fp8_communication)
 
 
-def reduce_backward(input_, process_group):
-    return _ReduceBackward.apply(input_, process_group)
+def reduce_backward(input_, process_group, fp8_communication=False):
+    return _ReduceBackward.apply(input_, process_group, fp8_communication)
 
 
-def all_to_all_comm(input_, process_group=None, scatter_dim=2, gather_dim=1):
-    return _AllToAll.apply(input_, process_group, scatter_dim, gather_dim)
+def all_to_all_comm(input_, process_group=None, scatter_dim=2, gather_dim=1, fp8_communication=False):
+    return _AllToAll.apply(input_, process_group, scatter_dim, gather_dim, fp8_communication)
+
+
+def gather_sp_output(hidden_states, shard_config, sp_dim=1):
+    """
+    Gather the output of the last layer for cross entropy computation
+    """
+    sp_group = shard_config.sequence_parallel_process_group
+    sp_mode = shard_config.sequence_parallelism_mode
+    fp8_comm = shard_config.fp8_communication
+    if dist.get_world_size(sp_group) == 1:
+        return hidden_states
+
+    # Rescale grad (HybridParallelPlugin applies ZeRO grad averaging on the DP * SP group)
+    scale = None if is_share_sp_tp(sp_mode) else dist.get_world_size(sp_group)
+    hidden_states = gather_forward_split_backward(
+        hidden_states, sp_dim, sp_group, grad_scale=scale, fp8_communication=fp8_comm
+    )
+    return hidden_states

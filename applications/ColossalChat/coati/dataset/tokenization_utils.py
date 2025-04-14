@@ -49,6 +49,10 @@ def tokenize_sft(
 
     messages = data_point["messages"]
     template = deepcopy(conversation_template)
+
+    if messages[0]["from"] == "system":
+        template.system_message = str(messages[0]["content"])
+        messages.pop(0)
     template.messages = []
     for idx, mess in enumerate(messages):
         if mess["from"] != template.roles[idx % 2]:
@@ -143,16 +147,18 @@ def tokenize_prompt(
         ignore_index: the ignore index when calculate loss during training
         max_length: the maximum context length
     """
-
     messages = data_point["messages"]
     template = deepcopy(conversation_template)
     template.messages = []
 
+    if messages[0]["from"] == "system":
+        template.system_message = str(messages[0]["content"])
+        messages.pop(0)
+
     for idx, mess in enumerate(messages):
         if mess["from"] != template.roles[idx % 2]:
             raise ValueError(
-                f"Message should iterate between user and assistant and starts with a \
-                             line from the user. Got the following data:\n{messages}"
+                f"Message should iterate between user and assistant and starts with a line from the user. Got the following data:\n{messages}"
             )
         template.append_message(mess["from"], mess["content"])
 
@@ -160,9 +166,8 @@ def tokenize_prompt(
     if len(template.messages) % 2 != 1:
         # exclude the answer if provided. keep only the prompt
         template.messages = template.messages[:-1]
-
     # Prepare data
-    prompt = template.get_prompt(length=len(template.messages) - 1, add_generation_prompt=True)
+    prompt = template.get_prompt(length=len(template.messages), add_generation_prompt=True)
     tokenized = tokenizer([prompt], add_special_tokens=False)["input_ids"][0]
 
     if tokenizer.bos_token_id is not None:
@@ -178,12 +183,21 @@ def tokenize_prompt(
         )
 
     # `inputs_decode` can be used to check whether the tokenization method is true.
-    return dict(
-        input_ids=tokenized,
-        inputs_decode=prompt,
-        seq_length=len(tokenized),
-        seq_category=data_point["category"] if "category" in data_point else "None",
-    )
+    if "gt_answer" in data_point:
+        return dict(
+            input_ids=tokenized,
+            inputs_decode=prompt,
+            seq_length=len(tokenized),
+            seq_category=data_point["category"] if "category" in data_point else "None",
+            gt_answer=data_point["gt_answer"],
+        )
+    else:
+        return dict(
+            input_ids=tokenized,
+            inputs_decode=prompt,
+            seq_length=len(tokenized),
+            seq_category=data_point["category"] if "category" in data_point else "None",
+        )
 
 
 def apply_rlhf_data_format(template: Conversation, tokenizer: Any):
@@ -224,6 +238,10 @@ def tokenize_rlhf(
     context = data_point["context"]
     template = deepcopy(conversation_template)
     template.clear()
+
+    if context[0]["from"] == "system":
+        template.system_message = str(context[0]["content"])
+        context.pop(0)
 
     for idx, mess in enumerate(context):
         if mess["from"] != template.roles[idx % 2]:
@@ -344,6 +362,10 @@ def tokenize_kto(
     completion = data_point["completion"]
     template = deepcopy(conversation_template)
     template.clear()
+
+    if prompt[0]["from"] == "system":
+        template.system_message = str(prompt[0]["content"])
+        prompt.pop(0)
 
     if prompt[0].get("from", None) != "user":
         raise ValueError("conversation should start with user")
